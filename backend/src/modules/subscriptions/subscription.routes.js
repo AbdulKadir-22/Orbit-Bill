@@ -150,6 +150,11 @@ router.route('/:id')
     requirePermission(PERMISSIONS.SUBSCRIPTIONS_MANAGE),
     validate(updateSubscriptionValidation),
     subscriptionController.updateSubscription
+  )
+  .delete(
+    requirePermission(PERMISSIONS.SUBSCRIPTIONS_MANAGE),
+    validate(subscriptionIdParamValidation),
+    subscriptionController.deleteSubscription
   );
 
 /**

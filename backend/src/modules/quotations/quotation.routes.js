@@ -245,6 +245,12 @@ router.route('/')
     quotationController.listQuotations
   );
 
+router.post(
+  '/calculate',
+  requirePermission(PERMISSIONS.QUOTATIONS_READ),
+  quotationController.calculatePreview
+);
+
 /**
  * @swagger
  * /api/v1/quotations/{id}:

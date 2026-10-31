@@ -451,6 +451,21 @@ const convertQuotation = async (id, { startDate, expiryDate, paymentTerms }, use
   }
 };
 
+const calculatePreview = async (lines, user) => {
+  if (!lines || !Array.isArray(lines) || lines.length === 0) {
+    return { subtotal: 0, taxTotal: 0, discountTotal: 0, grandTotal: 0, lines: [], discountPreview: [] };
+  }
+  const result = await buildLines(lines, { user });
+  return {
+    subtotal: result.subtotal,
+    taxTotal: result.taxTotal,
+    discountTotal: result.discountTotal,
+    grandTotal: result.grandTotal,
+    lines: result.lines,
+    discountPreview: result.discountPreview,
+  };
+};
+
 module.exports = {
   createQuotation,
   createTemplate,
@@ -465,4 +480,5 @@ module.exports = {
   sendQuotation,
   rejectQuotation,
   convertQuotation,
+  calculatePreview,
 };

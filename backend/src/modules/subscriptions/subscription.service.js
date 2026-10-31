@@ -446,12 +446,31 @@ const cancelSubscription = async (id, { reason }, user) => {
   return subscription;
 };
 
+const deleteSubscription = async (id, user) => {
+  if (user.role !== ROLES.ADMIN) {
+    throw ApiError.forbidden('Only administrators can delete subscriptions');
+  }
+
+  const subscription = await Subscription.findById(id);
+  if (!subscription) {
+    throw ApiError.notFound('Subscription not found');
+  }
+
+  if (subscription.status !== 'draft') {
+    throw ApiError.badRequest(`Only draft subscriptions can be deleted. Current status is '${subscription.status}'.`);
+  }
+
+  await Subscription.findByIdAndDelete(id);
+  return subscription;
+};
+
 module.exports = {
   createSubscription,
   listSubscriptions,
   getSubscriptionById,
   getSubscriptionHistory,
   updateSubscription,
+  deleteSubscription,
   moveToQuotation,
   confirmSubscription,
   activateSubscription,
