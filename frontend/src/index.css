@@ -1,0 +1,169 @@
+@import "tailwindcss";
+
+@layer theme {
+  :root {
+    --font-heading: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* Light Mode - Monochrome Neo-Brutalism */
+    --color-surface: #F4F4F0;
+    --color-surface-card: #FFFFFF;
+    --color-surface-elevated: #EAEAE4;
+    --color-surface-subtle: #EEEEEC;
+    
+    --color-ink: #121212;
+    --color-ink-muted: #575757;
+    --color-ink-faint: #8E8E8E;
+
+    --color-border: #121212;
+    --color-border-subtle: #D4D4CE;
+
+    /* Shadow tokens for neo-brutalist offset */
+    --shadow-brutal-sm: 2px 2px 0px #121212;
+    --shadow-brutal: 4px 4px 0px #121212;
+    --shadow-brutal-lg: 6px 6px 0px #121212;
+    --shadow-brutal-hover: 1px 1px 0px #121212;
+  }
+
+  .dark {
+    /* Dark Mode - Monochrome Neo-Brutalism */
+    --color-surface: #101012;
+    --color-surface-card: #18181B;
+    --color-surface-elevated: #242428;
+    --color-surface-subtle: #1F1F23;
+    
+    --color-ink: #F4F4F0;
+    --color-ink-muted: #A1A1AA;
+    --color-ink-faint: #71717A;
+
+    --color-border: #F4F4F0;
+    --color-border-subtle: #2E2E33;
+
+    /* Dark Mode brutal shadows with sharp high-contrast offset */
+    --shadow-brutal-sm: 2px 2px 0px #F4F4F0;
+    --shadow-brutal: 4px 4px 0px #F4F4F0;
+    --shadow-brutal-lg: 6px 6px 0px #F4F4F0;
+    --shadow-brutal-hover: 1px 1px 0px #F4F4F0;
+  }
+}
+
+@theme {
+  --color-surface: var(--color-surface);
+  --color-surface-card: var(--color-surface-card);
+  --color-surface-elevated: var(--color-surface-elevated);
+  --color-surface-subtle: var(--color-surface-subtle);
+
+  --color-ink: var(--color-ink);
+  --color-ink-muted: var(--color-ink-muted);
+  --color-ink-faint: var(--color-ink-faint);
+
+  --color-border: var(--color-border);
+  --color-border-subtle: var(--color-border-subtle);
+
+  --shadow-brutal-sm: var(--shadow-brutal-sm);
+  --shadow-brutal: var(--shadow-brutal);
+  --shadow-brutal-lg: var(--shadow-brutal-lg);
+  --shadow-brutal-hover: var(--shadow-brutal-hover);
+
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+}
+
+/* Base resets & typography */
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  letter-spacing: -0.025em;
+}
+
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
+}
+
+/* Neo-brutalist helper utilities */
+.brutal-card {
+  background-color: var(--color-surface-card);
+  border: 2px solid var(--color-border);
+  box-shadow: var(--shadow-brutal);
+}
+
+.brutal-btn {
+  background-color: var(--color-surface-card);
+  color: var(--color-ink);
+  border: 2px solid var(--color-border);
+  box-shadow: var(--shadow-brutal-sm);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.15s ease;
+}
+
+.brutal-btn:hover:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: var(--shadow-brutal-hover);
+}
+
+.brutal-btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.brutal-btn-primary {
+  background-color: var(--color-ink);
+  color: var(--color-surface);
+  border: 2px solid var(--color-border);
+  box-shadow: var(--shadow-brutal-sm);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.15s ease;
+}
+
+.dark .brutal-btn-primary {
+  background-color: var(--color-ink);
+  color: var(--color-surface);
+}
+
+.brutal-btn-primary:hover:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: var(--shadow-brutal-hover);
+}
+
+.brutal-btn-primary:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.brutal-input {
+  background-color: var(--color-surface-card);
+  color: var(--color-ink);
+  border: 2px solid var(--color-border);
+  font-family: var(--font-body);
+  transition: box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.brutal-input:focus {
+  outline: none;
+  box-shadow: var(--shadow-brutal-sm);
+}
+
+.brutal-badge {
+  border: 1.5px solid var(--color-border);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.125rem 0.5rem;
+}
