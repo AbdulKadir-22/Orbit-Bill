@@ -33,6 +33,11 @@ const updateStaffPermissions = asyncHandler(async (req, res) => {
   return ApiResponse.success(res, 'Staff permissions updated successfully', staff);
 });
 
+const deleteStaff = asyncHandler(async (req, res) => {
+  const result = await userService.deleteStaff(req.params.id, req.user);
+  return ApiResponse.success(res, result.message, result.staff);
+});
+
 module.exports = {
   createStaff,
   listStaff,
@@ -40,4 +45,5 @@ module.exports = {
   updateStaff,
   updateStaffStatus,
   updateStaffPermissions,
+  deleteStaff,
 };
