@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Layers,
@@ -7,11 +7,8 @@ import {
   Clock,
   ArrowRight,
   Edit2,
-  Building,
   Mail,
   Phone,
-  MapPin,
-  FileCheck,
 } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
@@ -33,7 +30,7 @@ import { getStatusBadgeVariant } from '../../constants/statusStyles';
 export const CustomerDashboardPage = () => {
   const navigate = useNavigate();
   const toast = useToast();
-  const { user, login } = useAuth();
+  const { user } = useAuth();
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -49,13 +46,15 @@ export const CustomerDashboardPage = () => {
     address: '',
   });
 
-  const loadData = async () => {
+  const userName = user?.name || '';
+
+  const loadData = useCallback(async () => {
     try {
       const res = await portalService.getDashboard();
       setData(res);
       const prof = res.profile || {};
       setProfileForm({
-        name: prof.name || user?.name || '',
+        name: prof.name || userName,
         phone: prof.phone || '',
         company: prof.company || '',
         gstin: prof.gstin || '',
@@ -66,11 +65,11 @@ export const CustomerDashboardPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userName]);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();

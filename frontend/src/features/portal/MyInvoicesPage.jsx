@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Eye, Download, Printer } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
@@ -14,6 +14,7 @@ import { formatCurrency, formatDate } from '../../lib/utils';
 import { getPaymentMethodLabel } from '../../constants/options';
 
 export const MyInvoicesPage = () => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Read initial tab and filters from URL (?tab=payments, ?subscriptionId=...)
@@ -42,7 +43,7 @@ export const MyInvoicesPage = () => {
   const [modalLoading, setModalLoading] = useState(false);
 
   // Load Invoices
-  const loadInvoices = async () => {
+  const loadInvoices = useCallback(async () => {
     setInvoicesLoading(true);
     try {
       const params = {
@@ -60,10 +61,10 @@ export const MyInvoicesPage = () => {
     } finally {
       setInvoicesLoading(false);
     }
-  };
+  }, [invoicePage, statusFilter, subscriptionIdFilter]);
 
   // Load Payments
-  const loadPayments = async () => {
+  const loadPayments = useCallback(async () => {
     setPaymentsLoading(true);
     try {
       const res = await portalService.getPayments({
@@ -77,7 +78,7 @@ export const MyInvoicesPage = () => {
     } finally {
       setPaymentsLoading(false);
     }
-  };
+  }, [paymentPage]);
 
   useEffect(() => {
     if (activeTab === 'invoices') {
@@ -85,7 +86,7 @@ export const MyInvoicesPage = () => {
     } else {
       loadPayments();
     }
-  }, [activeTab, invoicePage, paymentPage, statusFilter, subscriptionIdFilter]);
+  }, [activeTab, loadInvoices, loadPayments]);
 
   // Handle Tab Switch
   const handleTabChange = (tab) => {
@@ -244,7 +245,7 @@ export const MyInvoicesPage = () => {
                         <tr
                           key={inv._id}
                           className="hover:bg-neutral-50/80 cursor-pointer transition-colors"
-                          onClick={() => openInvoiceModal(inv, false)}
+                          onClick={() => navigate(`/invoices/${inv._id}`)}
                         >
                           <td className="py-3 px-4 font-mono text-neutral-400">
                             {(invoicePagination.page - 1) * invoicePagination.limit + idx + 1}
@@ -278,7 +279,7 @@ export const MyInvoicesPage = () => {
                               variant="ghost"
                               size="sm"
                               className="h-7 text-xs px-2"
-                              onClick={() => openInvoiceModal(inv, false)}
+                              onClick={() => navigate(`/invoices/${inv._id}`)}
                             >
                               <Eye size={12} className="mr-1" /> View
                             </Button>

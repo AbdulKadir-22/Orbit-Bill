@@ -173,7 +173,7 @@ export const AppRoutes = () => {
         <Route
           path="/invoices/:id"
           element={
-            <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
+            <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF, ROLES.CUSTOMER]}>
               <InvoiceDetailsPage />
             </RoleRoute>
           }

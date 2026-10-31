@@ -30,16 +30,19 @@ const generateInvoiceForSubscription = async (subscriptionId, options = {}) => {
 
     if (!subscription) {
       await session.abortTransaction();
+      logger.info(`[Billing] Subscription ${subscriptionId} skipped: not found`);
       return { invoice: null, status: 'skipped_not_eligible', error: 'Subscription not found' };
     }
 
     if (subscription.status !== 'active') {
       await session.abortTransaction();
+      logger.info(`[Billing] Subscription ${subscription.subscriptionNumber || subscriptionId} skipped: not active (status: '${subscription.status}')`);
       return { invoice: null, status: 'skipped_not_eligible', error: `Subscription is in status '${subscription.status}' (only active subscriptions can be billed)` };
     }
 
     if (!subscription.nextBillingDate) {
       await session.abortTransaction();
+      logger.info(`[Billing] Subscription ${subscription.subscriptionNumber || subscriptionId} skipped: nextBillingDate is null`);
       return { invoice: null, status: 'skipped_not_eligible', error: 'Subscription has no nextBillingDate' };
     }
 
@@ -47,11 +50,13 @@ const generateInvoiceForSubscription = async (subscriptionId, options = {}) => {
     const dueThreshold = endOfDay(asOfDate);
     if (new Date(subscription.nextBillingDate) > dueThreshold) {
       await session.abortTransaction();
+      logger.info(`[Billing] Subscription ${subscription.subscriptionNumber || subscriptionId} skipped: not due yet (${subscription.nextBillingDate} > ${dueThreshold})`);
       return { invoice: null, status: 'skipped_not_eligible', error: 'Subscription is not yet due for billing' };
     }
 
     if (new Date(subscription.nextBillingDate) > new Date(subscription.expiryDate)) {
       await session.abortTransaction();
+      logger.info(`[Billing] Subscription ${subscription.subscriptionNumber || subscriptionId} skipped: nextBillingDate is past expiryDate`);
       return { invoice: null, status: 'skipped_not_eligible', error: 'nextBillingDate is past subscription expiryDate' };
     }
 
@@ -72,6 +77,7 @@ const generateInvoiceForSubscription = async (subscriptionId, options = {}) => {
     const existing = await Invoice.findOne({ billingKey }).session(session);
     if (existing) {
       await session.abortTransaction();
+      logger.info(`[Billing] Subscription ${subscription.subscriptionNumber || subscriptionId} skipped: already billed for period ${yyyy}-${mm}-${dd}`);
       return { invoice: existing, status: 'skipped_already_billed' };
     }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -47,6 +47,24 @@ export const RecordPaymentModal = ({
   // Determine current active invoice
   const currentInvoice = propInvoice || selectedInvoice;
 
+  const loadPayableInvoices = useCallback(async () => {
+    setLoadingPayables(true);
+    try {
+      const res = await invoiceService.list({ payable: true, limit: 100 });
+      const list = res.data || [];
+      setPayableInvoices(list);
+      if (list.length > 0) {
+        setSelectedInvoiceId(list[0]._id);
+        setSelectedInvoice(list[0]);
+        setAmount(String(list[0].amountDue ?? list[0].grandTotal ?? ''));
+      }
+    } catch (err) {
+      showErrorToast(err?.message || 'Failed to load payable invoices');
+    } finally {
+      setLoadingPayables(false);
+    }
+  }, [showErrorToast]);
+
   // On open: setup defaults
   useEffect(() => {
     if (!isOpen) {
@@ -70,25 +88,7 @@ export const RecordPaymentModal = ({
       // Fetch payable invoices for the searchable select
       loadPayableInvoices();
     }
-  }, [isOpen, propInvoice]);
-
-  const loadPayableInvoices = async () => {
-    setLoadingPayables(true);
-    try {
-      const res = await invoiceService.list({ payable: true, limit: 100 });
-      const list = res.data || [];
-      setPayableInvoices(list);
-      if (list.length > 0) {
-        setSelectedInvoiceId(list[0]._id);
-        setSelectedInvoice(list[0]);
-        setAmount(String(list[0].amountDue ?? list[0].grandTotal ?? ''));
-      }
-    } catch (err) {
-      showErrorToast(err?.message || 'Failed to load payable invoices');
-    } finally {
-      setLoadingPayables(false);
-    }
-  };
+  }, [isOpen, propInvoice, loadPayableInvoices]);
 
   const handleInvoiceChange = (invId) => {
     setSelectedInvoiceId(invId);

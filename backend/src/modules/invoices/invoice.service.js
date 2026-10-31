@@ -150,8 +150,9 @@ const listInvoices = async (query) => {
 };
 
 const Payment = require('../payments/payment.model');
+const ROLES = require('../../constants/roles');
 
-const getInvoiceById = async (id) => {
+const getInvoiceById = async (id, user = null) => {
   const invoice = await Invoice.findById(id)
     .populate('customerId', 'name email company phone gstin address')
     .populate('subscriptionId', 'subscriptionNumber billingCycle startDate expiryDate')
@@ -161,6 +162,16 @@ const getInvoiceById = async (id) => {
 
   if (!invoice) {
     throw ApiError.notFound('Invoice not found');
+  }
+
+  // If customer is requesting, ensure ownership and non-draft status
+  if (user && user.role === ROLES.CUSTOMER) {
+    if (!user.customerId || invoice.customerId?._id?.toString() !== user.customerId.toString()) {
+      throw ApiError.notFound('Invoice not found');
+    }
+    if (invoice.status === 'draft' || invoice.status === 'cancelled') {
+      throw ApiError.notFound('Invoice not found');
+    }
   }
 
   const payments = await Payment.find({ invoiceId: id })

@@ -4,7 +4,10 @@ const paymentService = require('./payment.service');
 
 const recordPayment = asyncHandler(async (req, res) => {
   const result = await paymentService.recordPayment(req.body, req.user);
-  return ApiResponse.created(res, 'Payment recorded successfully', result.payment);
+  return ApiResponse.created(res, 'Payment recorded successfully', {
+    ...result.payment.toObject?.() || result.payment,
+    invoice: result.invoice,
+  });
 });
 
 const listPayments = asyncHandler(async (req, res) => {

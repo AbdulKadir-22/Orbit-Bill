@@ -42,6 +42,8 @@ const mapPortalSubscription = (sub) => ({
 const mapPortalInvoice = (inv) => ({
   _id: inv._id,
   invoiceNumber: inv.invoiceNumber,
+  subscriptionId: inv.subscriptionId?._id || inv.subscriptionId,
+  subscriptionNumber: inv.subscriptionId?.subscriptionNumber || null,
   invoiceDate: inv.invoiceDate,
   dueDate: inv.dueDate,
   billingPeriod: inv.billingPeriod,
@@ -166,8 +168,31 @@ const getPortalInvoices = asyncHandler(async (req, res) => {
     status: { $in: ['confirmed', 'paid'] },
   };
 
+  if (req.query.subscriptionId) {
+    filter.subscriptionId = req.query.subscriptionId;
+  }
+
+  const startOfToday = startOfDay(new Date());
+
+  // Handle optional status filter
+  if (req.query.status === 'paid') {
+    filter.status = 'paid';
+  } else if (req.query.status === 'confirmed') {
+    filter.status = 'confirmed';
+    filter.dueDate = { $gte: startOfToday };
+  } else if (req.query.status === 'overdue') {
+    filter.status = 'confirmed';
+    filter.amountDue = { $gt: 0 };
+    filter.dueDate = { $lt: startOfToday };
+  }
+
   const [invoices, total] = await Promise.all([
-    Invoice.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    Invoice.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('subscriptionId', 'subscriptionNumber')
+      .lean(),
     Invoice.countDocuments(filter),
   ]);
 
@@ -181,13 +206,22 @@ const getPortalInvoiceById = asyncHandler(async (req, res) => {
     _id: req.params.id,
     customerId,
     status: { $in: ['confirmed', 'paid'] },
-  }).lean();
+  })
+    .populate('customerId', 'name email company phone gstin address billingAddress')
+    .populate('subscriptionId', 'subscriptionNumber billingCycle')
+    .lean();
 
   if (!invoice) {
     throw ApiError.notFound('Invoice not found');
   }
 
-  return ApiResponse.success(res, 'Invoice details retrieved successfully', mapPortalInvoice(invoice));
+  const payments = await Payment.find({ invoiceId: invoice._id, status: 'recorded' }).lean();
+
+  const portalInvoice = mapPortalInvoice(invoice);
+  portalInvoice.customerId = invoice.customerId;
+  portalInvoice.payments = payments.map(mapPortalPayment);
+
+  return ApiResponse.success(res, 'Invoice details retrieved successfully', portalInvoice);
 });
 
 const streamPortalInvoicePdf = asyncHandler(async (req, res) => {

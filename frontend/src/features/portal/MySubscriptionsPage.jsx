@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -24,7 +24,7 @@ export const MySubscriptionsPage = () => {
 
   const [counts, setCounts] = useState({ active: 0, closed: 0 });
 
-  const loadSubscriptions = async () => {
+  const loadSubscriptions = useCallback(async () => {
     setLoading(true);
     try {
       // Parallel fetch for active and closed counts
@@ -55,15 +55,15 @@ export const MySubscriptionsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab]);
 
   useEffect(() => {
     loadSubscriptions();
-  }, [activeTab]);
+  }, [loadSubscriptions]);
 
   // Load detailed subscription when selectedSub changes
   useEffect(() => {
-    if (!selectedSub?._id) {
+    if (!selectedSub) {
       setDetailSub(null);
       return;
     }
@@ -82,7 +82,7 @@ export const MySubscriptionsPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [selectedSub?._id]);
+  }, [selectedSub]);
 
   return (
     <div className="space-y-6">

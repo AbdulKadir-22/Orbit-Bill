@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { ROLES } from '../../constants/roles';
 import { invoiceService } from './services/invoiceService';
+import { portalService } from '../portal/services/portalService';
 import { InvoiceStatusBadge } from '../../components/common/InvoiceStatusBadge';
 import { InvoiceDocument } from '../../components/common/InvoiceDocument';
 import { RecordPaymentModal } from '../../components/common/RecordPaymentModal';
@@ -19,12 +22,13 @@ import {
   XCircle,
   CreditCard,
   ChevronRight,
-  ArrowLeft,
 } from 'lucide-react';
 
 export const InvoiceDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { role } = useAuth();
+  const isCustomer = role === ROLES.CUSTOMER;
   const { showSuccessToast, showErrorToast } = useToast();
 
   const [invoice, setInvoice] = useState(null);
@@ -44,9 +48,11 @@ export const InvoiceDetailsPage = () => {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const loadInvoice = async () => {
+  const loadInvoice = useCallback(async () => {
     try {
-      const data = await invoiceService.getById(id);
+      const data = isCustomer
+        ? await portalService.getInvoiceById(id)
+        : await invoiceService.getById(id);
       if (!data) {
         setNotFound(true);
       } else {
@@ -58,11 +64,11 @@ export const InvoiceDetailsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, isCustomer]);
 
   useEffect(() => {
     loadInvoice();
-  }, [id]);
+  }, [loadInvoice]);
 
   useEffect(() => {
     const handleOutside = () => setIsMoreOpen(false);
@@ -132,8 +138,12 @@ export const InvoiceDetailsPage = () => {
         <p className="text-xs text-[#737373] mt-1 mb-4">
           The requested invoice does not exist or has been deleted.
         </p>
-        <Button variant="outline" size="sm" onClick={() => navigate('/invoices')}>
-          Back to Invoices
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate(isCustomer ? '/my/invoices' : '/invoices')}
+        >
+          {isCustomer ? 'Back to My Invoices' : 'Back to Invoices'}
         </Button>
       </div>
     );
@@ -153,8 +163,11 @@ export const InvoiceDetailsPage = () => {
         <div>
           {/* Breadcrumb */}
           <div className="flex items-center gap-1.5 text-xs text-[#737373] mb-1.5">
-            <Link to="/invoices" className="hover:text-[#0b0b0b] transition-colors">
-              Invoices
+            <Link
+              to={isCustomer ? '/my/invoices' : '/invoices'}
+              className="hover:text-[#0b0b0b] transition-colors"
+            >
+              {isCustomer ? 'My Invoices' : 'Invoices'}
             </Link>
             <ChevronRight size={12} />
             <span className="font-mono text-[#0b0b0b] font-medium">
@@ -175,7 +188,7 @@ export const InvoiceDetailsPage = () => {
             <div className="text-xs text-[#737373] mt-1">
               Generated from{' '}
               <Link
-                to={`/subscriptions/${invoice.subscriptionId._id || invoice.subscriptionId}`}
+                to={isCustomer ? '/my/subscriptions' : `/subscriptions/${invoice.subscriptionId._id || invoice.subscriptionId}`}
                 className="font-mono font-medium text-black hover:underline"
               >
                 {invoice.subscriptionId.subscriptionNumber || invoice.subscriptionNumber || 'Subscription'}
@@ -197,7 +210,7 @@ export const InvoiceDetailsPage = () => {
             Print
           </Button>
 
-          {!isCancelled && (
+          {!isCustomer && !isCancelled && (
             <Button
               variant="outline"
               size="sm"
@@ -209,8 +222,8 @@ export const InvoiceDetailsPage = () => {
             </Button>
           )}
 
-          {/* More Dropdown (Confirm & Cancel) */}
-          {(isDraft || canCancel) && (
+          {/* More Dropdown (Confirm & Cancel - Admin/Staff only) */}
+          {!isCustomer && (isDraft || canCancel) && (
             <div className="relative inline-block text-left" onClick={(e) => e.stopPropagation()}>
               <Button
                 variant="outline"
@@ -269,7 +282,7 @@ export const InvoiceDetailsPage = () => {
             <h3 className="text-sm font-semibold text-[#0b0b0b]">
               Payments ({payments.length})
             </h3>
-            {canPay && (
+            {!isCustomer && canPay && (
               <Button
                 variant="primary"
                 size="sm"
