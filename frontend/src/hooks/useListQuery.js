@@ -65,12 +65,17 @@ export const useListQuery = (fetcher, initialFilters = {}) => {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      // Build query params
+      // Build query params - strip empty strings, undefined, and null
       const params = {
         page,
         limit,
-        ...filters,
       };
+
+      Object.entries(filters).forEach(([k, v]) => {
+        if (v !== '' && v !== undefined && v !== null) {
+          params[k] = v;
+        }
+      });
 
       if (debouncedSearch.trim()) {
         params.search = debouncedSearch.trim();

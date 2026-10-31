@@ -7,7 +7,7 @@
  */
 export const Badge = ({
   children,
-  variant = 'neutral', // 'success' | 'pending' | 'danger' | 'neutral'
+  variant = 'neutral', // 'success' | 'pending' | 'danger' | 'info' | 'neutral'
   size = 'md', // 'sm' | 'md'
   className = '',
 }) => {
@@ -15,6 +15,7 @@ export const Badge = ({
     success: 'bg-[#ecfdf5] text-[#065f46] border-[#a7f3d0]',
     pending: 'bg-[#fffbeb] text-[#92400e] border-[#fde68a]',
     danger: 'bg-[#fef2f2] text-[#991b1b] border-[#fecaca]',
+    info: 'bg-[#eff6ff] text-[#1e40af] border-[#bfdbfe]',
     neutral: 'bg-[#f4f4f5] text-[#52525b] border-[#e4e4e7]',
   }[variant] || 'bg-[#f4f4f5] text-[#52525b] border-[#e4e4e7]';
 

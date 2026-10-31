@@ -12,6 +12,9 @@ import { ProductFormPage } from '../features/products/ProductFormPage';
 import { PlansPage } from '../features/plans/PlansPage';
 import { TaxesPage } from '../features/taxes/TaxesPage';
 import { DiscountsPage } from '../features/discounts/DiscountsPage';
+import { CustomersPage } from '../features/customers/CustomersPage';
+import { CustomerDetailsPage } from '../features/customers/CustomerDetailsPage';
+import { StaffPage } from '../features/staff/StaffPage';
 
 /**
  * Root Router matching all required role guards & routes:
@@ -96,7 +99,7 @@ export const AppRoutes = () => {
           path="/customers"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title={STRINGS.NAV.CUSTOMERS} />
+              <CustomersPage />
             </RoleRoute>
           }
         />
@@ -104,7 +107,7 @@ export const AppRoutes = () => {
           path="/customers/:id"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title="Customer Details" />
+              <CustomerDetailsPage />
             </RoleRoute>
           }
         />
@@ -186,7 +189,7 @@ export const AppRoutes = () => {
           path="/staff"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN]}>
-              <PlaceholderPage title={STRINGS.NAV.STAFF} />
+              <StaffPage />
             </RoleRoute>
           }
         />
