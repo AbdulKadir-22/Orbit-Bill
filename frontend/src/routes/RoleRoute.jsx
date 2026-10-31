@@ -9,10 +9,12 @@ import { Button } from '../components/ui/Button';
  * RoleRoute guard
  * Restricts access to specified roles. If role is not permitted, renders clean No Access state.
  */
-export const RoleRoute = ({ allowedRoles = [], children }) => {
-  const { role } = useAuth();
+export const RoleRoute = ({ allowedRoles = [], requiredPermission, children }) => {
+  const { role, hasPermission } = useAuth();
 
-  const isAllowed = !allowedRoles.length || (role && allowedRoles.includes(role));
+  const isRoleAllowed = !allowedRoles.length || (role && allowedRoles.includes(role));
+  const isPermissionAllowed = !requiredPermission || hasPermission(requiredPermission);
+  const isAllowed = isRoleAllowed && isPermissionAllowed;
 
   if (!isAllowed) {
     const homePath = getRoleHomePath(role);

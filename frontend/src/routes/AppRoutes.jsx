@@ -5,8 +5,12 @@ import { STRINGS } from '../constants/strings';
 import { ProtectedRoute } from './ProtectedRoute';
 import { RoleRoute } from './RoleRoute';
 import { AppShell } from '../components/layout/AppShell';
-import { PlaceholderPage } from '../components/layout/PlaceholderPage';
 import { AuthPage } from '../features/auth/AuthPage';
+import { DashboardPage } from '../features/dashboard/DashboardPage';
+import { ReportsPage } from '../features/reports/ReportsPage';
+import { CustomerDashboardPage } from '../features/portal/CustomerDashboardPage';
+import { MySubscriptionsPage } from '../features/portal/MySubscriptionsPage';
+import { MyInvoicesPage } from '../features/portal/MyInvoicesPage';
 import { ProductsPage } from '../features/products/ProductsPage';
 import { ProductFormPage } from '../features/products/ProductFormPage';
 import { PlansPage } from '../features/plans/PlansPage';
@@ -64,8 +68,8 @@ export const AppRoutes = () => {
         <Route
           path="/dashboard"
           element={
-            <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title={STRINGS.NAV.DASHBOARD} />
+            <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]} requiredPermission="dashboard:view">
+              <DashboardPage />
             </RoleRoute>
           }
         />
@@ -201,8 +205,8 @@ export const AppRoutes = () => {
         <Route
           path="/reports"
           element={
-            <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title={STRINGS.NAV.REPORTS} />
+            <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]} requiredPermission="reports:view">
+              <ReportsPage />
             </RoleRoute>
           }
         />
@@ -222,7 +226,7 @@ export const AppRoutes = () => {
           path="/my/dashboard"
           element={
             <RoleRoute allowedRoles={[ROLES.CUSTOMER]}>
-              <PlaceholderPage title={STRINGS.NAV.MY_DASHBOARD} />
+              <CustomerDashboardPage />
             </RoleRoute>
           }
         />
@@ -230,7 +234,7 @@ export const AppRoutes = () => {
           path="/my/subscriptions"
           element={
             <RoleRoute allowedRoles={[ROLES.CUSTOMER]}>
-              <PlaceholderPage title={STRINGS.NAV.MY_SUBSCRIPTIONS} />
+              <MySubscriptionsPage />
             </RoleRoute>
           }
         />
@@ -238,7 +242,7 @@ export const AppRoutes = () => {
           path="/my/invoices"
           element={
             <RoleRoute allowedRoles={[ROLES.CUSTOMER]}>
-              <PlaceholderPage title={STRINGS.NAV.MY_INVOICES} />
+              <MyInvoicesPage />
             </RoleRoute>
           }
         />

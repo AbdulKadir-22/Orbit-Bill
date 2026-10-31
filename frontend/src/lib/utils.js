@@ -1,11 +1,11 @@
 /**
  * Central currency symbol configuration for OrbitBill
- * Easily changeable to ₹, €, £, etc.
+ * Uses Indian Rupee (₹)
  */
-export const CURRENCY_SYMBOL = '$';
+export const CURRENCY_SYMBOL = '₹';
 
 /**
- * Format numeric value as currency
+ * Format numeric value as currency (INR formatting with ₹)
  * @param {number|string} amount 
  * @param {boolean} showSymbol 
  * @returns {string}
@@ -13,7 +13,7 @@ export const CURRENCY_SYMBOL = '$';
 export const formatCurrency = (amount, showSymbol = true) => {
   const num = Number(amount);
   if (isNaN(num)) return showSymbol ? `${CURRENCY_SYMBOL}0.00` : '0.00';
-  const formatted = num.toLocaleString('en-US', {
+  const formatted = num.toLocaleString('en-IN', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });

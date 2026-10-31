@@ -258,7 +258,7 @@ export const InvoiceDetailsPage = () => {
       </div>
 
       {/* Clean Read-Only Invoice Document component */}
-      <div className="invoice-print-area">
+      <div className="print-area">
         <InvoiceDocument invoice={invoice} />
       </div>
 
