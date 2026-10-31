@@ -1,0 +1,238 @@
+
+erDiagram
+    USER {
+        ObjectId _id PK
+        string name
+        string email UK
+        string password
+        enum role
+        boolean isActive
+        ObjectId customerId FK
+        array permissions
+        string resetPasswordToken
+        date resetPasswordExpires
+        date createdAt
+    }
+
+    CUSTOMER {
+        ObjectId _id PK
+        string name
+        string email
+        string phone
+        string company
+        string gstin
+        object address
+        string notes
+        boolean isActive
+        ObjectId createdBy FK
+        date createdAt
+    }
+
+    PRODUCT {
+        ObjectId _id PK
+        string name
+        enum type
+        number salesPrice
+        number costPrice
+        string notes
+        array variants
+        boolean isActive
+        ObjectId createdBy FK
+    }
+
+    PRODUCT_VARIANT {
+        ObjectId _id PK
+        ObjectId productId FK
+        string name
+        number priceDelta
+        string sku
+    }
+
+    PLAN {
+        ObjectId _id PK
+        string name
+        enum billingCycle
+        number price
+        number minQuantity
+        date availableFrom
+        date availableTo
+        boolean autoClose
+        boolean allowEarlyClose
+        boolean allowPause
+        boolean allowRenewal
+        boolean isActive
+        ObjectId createdBy FK
+    }
+
+    TAX {
+        ObjectId _id PK
+        string name
+        number rate
+        boolean isActive
+        ObjectId createdBy FK
+    }
+
+    DISCOUNT {
+        ObjectId _id PK
+        string name
+        enum type
+        number value
+        number minPurchase
+        number minQuantity
+        enum appliesTo
+        array productIds
+        date startDate
+        date endDate
+        number usageLimit
+        number usedCount
+        boolean isActive
+        ObjectId createdBy FK
+    }
+
+    QUOTATION {
+        ObjectId _id PK
+        string quoteNumber UK
+        ObjectId customerId FK
+        array lines
+        number subtotal
+        number taxTotal
+        number discountTotal
+        number grandTotal
+        date validUntil
+        enum status
+        boolean isTemplate
+        string templateName
+        ObjectId subscriptionId FK
+        ObjectId createdBy FK
+    }
+
+    QUOTATION_LINE {
+        ObjectId _id PK
+        ObjectId quotationId FK
+        ObjectId productId FK
+        ObjectId variantId FK
+        ObjectId planId FK
+        number quantity
+        number unitPrice
+        number taxRate
+        number taxAmount
+        number lineTotal
+    }
+
+    SUBSCRIPTION {
+        ObjectId _id PK
+        string subscriptionNumber UK
+        ObjectId customerId FK
+        ObjectId quotationId FK
+        array lines
+        enum billingCycle
+        date startDate
+        date expiryDate
+        date nextBillingDate
+        string paymentTerms
+        enum status
+        date pausedAt
+        date closedAt
+        string closeReason
+        date lastInvoicedAt
+        ObjectId createdBy FK
+    }
+
+    SUBSCRIPTION_LINE {
+        ObjectId _id PK
+        ObjectId subscriptionId FK
+        ObjectId productId FK
+        ObjectId variantId FK
+        ObjectId planId FK
+        number quantity
+        number unitPrice
+        number taxRate
+        number lineTotal
+    }
+
+    INVOICE {
+        ObjectId _id PK
+        string invoiceNumber UK
+        ObjectId customerId FK
+        ObjectId subscriptionId FK
+        date invoiceDate
+        date dueDate
+        object billingPeriod
+        array lines
+        number subtotal
+        number taxTotal
+        number discountTotal
+        number grandTotal
+        number amountPaid
+        number amountDue
+        array appliedDiscountIds
+        array appliedTaxIds
+        enum status
+        string billingKey UK
+        ObjectId createdBy FK
+    }
+
+    INVOICE_LINE {
+        ObjectId _id PK
+        ObjectId invoiceId FK
+        ObjectId productId FK
+        ObjectId variantId FK
+        string description
+        number quantity
+        number unitPrice
+        number taxRate
+        number taxAmount
+        number discountAmount
+        number lineTotal
+    }
+
+    PAYMENT {
+        ObjectId _id PK
+        string paymentNumber UK
+        ObjectId invoiceId FK
+        ObjectId customerId FK
+        number amount
+        enum method
+        date paidAt
+        string notes
+        string reference
+        ObjectId recordedBy FK
+    }
+
+    USER ||--o| CUSTOMER : "portal account"
+    USER ||--o{ CUSTOMER : creates
+    USER ||--o{ PRODUCT : creates
+    USER ||--o{ PLAN : creates
+    USER ||--o{ TAX : creates
+    USER ||--o{ DISCOUNT : creates
+    USER ||--o{ QUOTATION : creates
+    USER ||--o{ SUBSCRIPTION : creates
+    USER ||--o{ INVOICE : creates
+    USER ||--o{ PAYMENT : records
+
+    PRODUCT ||--o{ PRODUCT_VARIANT : contains
+
+    CUSTOMER ||--o{ QUOTATION : receives
+    CUSTOMER ||--o{ SUBSCRIPTION : owns
+    CUSTOMER ||--o{ INVOICE : receives
+    CUSTOMER ||--o{ PAYMENT : makes
+
+    QUOTATION ||--|{ QUOTATION_LINE : contains
+    PRODUCT ||--o{ QUOTATION_LINE : selected
+    PRODUCT_VARIANT o|--o{ QUOTATION_LINE : selected
+    PLAN ||--o{ QUOTATION_LINE : uses
+
+    QUOTATION o|--o| SUBSCRIPTION : converts_into
+    SUBSCRIPTION ||--|{ SUBSCRIPTION_LINE : contains
+    PRODUCT ||--o{ SUBSCRIPTION_LINE : includes
+    PRODUCT_VARIANT o|--o{ SUBSCRIPTION_LINE : selected
+    PLAN ||--o{ SUBSCRIPTION_LINE : uses
+
+    SUBSCRIPTION ||--o{ INVOICE : generates
+    INVOICE ||--|{ INVOICE_LINE : contains
+    PRODUCT ||--o{ INVOICE_LINE : billed_as
+
+    INVOICE ||--o{ PAYMENT : receives
+
+    TAX }o--o{ INVOICE : applied_to
+    DISCOUNT }o--o{ INVOICE : applied_to
