@@ -1,91 +1,76 @@
-const mongoose = require('mongoose');
+const { z } = require('zod');
+const { passwordSchema, emailSchema } = require('../auth/auth.validation');
+const { ALL_PERMISSIONS } = require('../../constants/permissions');
 
-const validateCreateUser = (req, res, next) => {
-  const { name, email, age } = req.body;
-  const errors = [];
-
-  if (!name || typeof name !== 'string' || name.trim().length === 0) {
-    errors.push('Name is required and must be a non-empty string');
-  } else if (name.trim().length < 2 || name.trim().length > 50) {
-    errors.push('Name must be between 2 and 50 characters');
-  }
-
-  const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
-  if (!email || typeof email !== 'string' || !emailRegex.test(email.trim())) {
-    errors.push('A valid email address is required');
-  }
-
-  if (age !== undefined) {
-    if (typeof age !== 'number' || age < 0 || age > 120) {
-      errors.push('Age must be a valid number between 0 and 120');
-    }
-  }
-
-  if (errors.length > 0) {
-    return res.status(400).json({
-      success: false,
-      message: 'Validation Error',
-      errors,
-    });
-  }
-
-  next();
+const createStaffValidation = {
+  body: z.object({
+    name: z.string({ required_error: 'Name is required' }).trim().min(2, 'Name must be at least 2 characters'),
+    email: emailSchema,
+    password: passwordSchema,
+    permissions: z.array(z.enum(ALL_PERMISSIONS, {
+      errorMap: () => ({ message: 'Invalid permission specified' }),
+    })).default([]),
+  }),
 };
 
-const validateUpdateUser = (req, res, next) => {
-  const { name, email, age } = req.body;
-  const errors = [];
-
-  if (!name && !email && age === undefined) {
-    return res.status(400).json({
-      success: false,
-      message: 'At least one field (name, email, age) must be provided for update',
-    });
-  }
-
-  if (name !== undefined) {
-    if (typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 50) {
-      errors.push('Name must be a string between 2 and 50 characters');
-    }
-  }
-
-  if (email !== undefined) {
-    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
-    if (typeof email !== 'string' || !emailRegex.test(email.trim())) {
-      errors.push('Please provide a valid email address');
-    }
-  }
-
-  if (age !== undefined) {
-    if (typeof age !== 'number' || age < 0 || age > 120) {
-      errors.push('Age must be a valid number between 0 and 120');
-    }
-  }
-
-  if (errors.length > 0) {
-    return res.status(400).json({
-      success: false,
-      message: 'Validation Error',
-      errors,
-    });
-  }
-
-  next();
+const updateStaffValidation = {
+  params: z.object({
+    id: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid staff ID format'),
+  }),
+  body: z.object({
+    name: z.string().trim().min(2, 'Name must be at least 2 characters').optional(),
+    permissions: z.array(z.enum(ALL_PERMISSIONS, {
+      errorMap: () => ({ message: 'Invalid permission specified' }),
+    })).optional(),
+  }).refine((data) => data.name !== undefined || data.permissions !== undefined, {
+    message: 'At least one field (name or permissions) must be provided for update',
+  }),
 };
 
-const validateUserId = (req, res, next) => {
-  const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({
-      success: false,
-      message: `Invalid User ID format: ${id}`,
-    });
-  }
-  next();
+const updateStaffStatusValidation = {
+  params: z.object({
+    id: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid staff ID format'),
+  }),
+  body: z.object({
+    isActive: z.boolean({ required_error: 'isActive status is required' }),
+  }),
+};
+
+const updateStaffPermissionsValidation = {
+  params: z.object({
+    id: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid staff ID format'),
+  }),
+  body: z.object({
+    permissions: z.array(z.enum(ALL_PERMISSIONS, {
+      errorMap: () => ({ message: 'Invalid permission specified' }),
+    })),
+  }),
+};
+
+const staffIdParamValidation = {
+  params: z.object({
+    id: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid staff ID format'),
+  }),
+};
+
+const listStaffValidation = {
+  query: z.object({
+    page: z.coerce.number().min(1).default(1),
+    limit: z.coerce.number().min(1).max(100).default(10),
+    search: z.string().optional(),
+    isActive: z.preprocess((val) => {
+      if (val === 'true' || val === true) return true;
+      if (val === 'false' || val === false) return false;
+      return undefined;
+    }, z.boolean().optional()),
+  }),
 };
 
 module.exports = {
-  validateCreateUser,
-  validateUpdateUser,
-  validateUserId,
+  createStaffValidation,
+  updateStaffValidation,
+  updateStaffStatusValidation,
+  updateStaffPermissionsValidation,
+  staffIdParamValidation,
+  listStaffValidation,
 };

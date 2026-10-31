@@ -1,151 +1,43 @@
-const User = require('./user.model');
+const asyncHandler = require('../../utils/asyncHandler');
+const ApiResponse = require('../../utils/ApiResponse');
+const userService = require('./user.service');
 
-// @desc    Create a new user
-// @route   POST /api/users
-const createUser = async (req, res, next) => {
-  try {
-    const { name, email, age } = req.body;
+const createStaff = asyncHandler(async (req, res) => {
+  const staff = await userService.createStaff(req.body, req.user._id);
+  return ApiResponse.created(res, 'Staff member created successfully', staff);
+});
 
-    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: 'A user with this email already exists',
-      });
-    }
+const listStaff = asyncHandler(async (req, res) => {
+  const { staffMembers, meta } = await userService.listStaff(req.query);
+  return ApiResponse.success(res, 'Staff members retrieved successfully', staffMembers, meta);
+});
 
-    const user = await User.create({
-      name: name.trim(),
-      email: email.toLowerCase().trim(),
-      age,
-    });
+const getStaffById = asyncHandler(async (req, res) => {
+  const staff = await userService.getStaffById(req.params.id);
+  return ApiResponse.success(res, 'Staff member retrieved successfully', staff);
+});
 
-    res.status(201).json({
-      success: true,
-      message: 'User created successfully',
-      data: user,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+const updateStaff = asyncHandler(async (req, res) => {
+  const staff = await userService.updateStaff(req.params.id, req.body);
+  return ApiResponse.success(res, 'Staff member updated successfully', staff);
+});
 
-// @desc    Get all users
-// @route   GET /api/users
-const getUsers = async (req, res, next) => {
-  try {
-    const users = await User.find().sort({ createdAt: -1 });
+const updateStaffStatus = asyncHandler(async (req, res) => {
+  const staff = await userService.updateStaffStatus(req.params.id, req.body.isActive, req.user);
+  const statusLabel = staff.isActive ? 'activated' : 'deactivated';
+  return ApiResponse.success(res, `Staff member ${statusLabel} successfully`, staff);
+});
 
-    res.status(200).json({
-      success: true,
-      count: users.length,
-      data: users,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// @desc    Get single user by ID
-// @route   GET /api/users/:id
-const getUserById = async (req, res, next) => {
-  try {
-    const user = await User.findById(req.params.id);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: `User not found with id: ${req.params.id}`,
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: user,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// @desc    Update user by ID
-// @route   PUT /api/users/:id
-const updateUser = async (req, res, next) => {
-  try {
-    const { name, email, age } = req.body;
-
-    if (email) {
-      const existingUser = await User.findOne({
-        email: email.toLowerCase().trim(),
-        _id: { $ne: req.params.id },
-      });
-
-      if (existingUser) {
-        return res.status(409).json({
-          success: false,
-          message: 'Another user is already registered with this email',
-        });
-      }
-    }
-
-    const updateData = {};
-    if (name !== undefined) updateData.name = name.trim();
-    if (email !== undefined) updateData.email = email.toLowerCase().trim();
-    if (age !== undefined) updateData.age = age;
-
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: `User not found with id: ${req.params.id}`,
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'User updated successfully',
-      data: user,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// @desc    Delete user by ID
-// @route   DELETE /api/users/:id
-const deleteUser = async (req, res, next) => {
-  try {
-    const user = await User.findByIdAndDelete(req.params.id);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: `User not found with id: ${req.params.id}`,
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'User deleted successfully',
-      data: user,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+const updateStaffPermissions = asyncHandler(async (req, res) => {
+  const staff = await userService.updateStaffPermissions(req.params.id, req.body.permissions);
+  return ApiResponse.success(res, 'Staff permissions updated successfully', staff);
+});
 
 module.exports = {
-  createUser,
-  getUsers,
-  getUserById,
-  updateUser,
-  deleteUser,
+  createStaff,
+  listStaff,
+  getStaffById,
+  updateStaff,
+  updateStaffStatus,
+  updateStaffPermissions,
 };
