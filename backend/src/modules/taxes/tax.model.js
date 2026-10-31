@@ -42,6 +42,6 @@ const taxSchema = new mongoose.Schema(
   }
 );
 
-taxSchema.index({ name: 1 }, { collation: { locale: 'en', strength: 2 } });
+taxSchema.index({ name: 1 }, { unique: true, collation: { locale: 'en', strength: 2 } });
 
 module.exports = mongoose.model('Tax', taxSchema);

@@ -131,6 +131,11 @@ router.route('/:id')
     requirePermission(PERMISSIONS.PAYMENTS_RECORD),
     validate(updatePaymentValidation),
     paymentController.updatePayment
+  )
+  .delete(
+    authorizeRoles(ROLES.ADMIN),
+    validate(paymentIdParamValidation),
+    paymentController.deletePayment
   );
 
 /**

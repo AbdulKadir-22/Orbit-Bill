@@ -102,6 +102,12 @@ const listInvoices = async (query) => {
     filter.dueDate = { $lt: startOfDay(new Date()) };
   }
 
+  // Payable filter: status = confirmed AND amountDue > 0
+  if (query.payable === true) {
+    filter.status = 'confirmed';
+    filter.amountDue = { $gt: 0 };
+  }
+
   if (query.invoiceDateStart || query.invoiceDateEnd) {
     filter.invoiceDate = {};
     if (query.invoiceDateStart) filter.invoiceDate.$gte = new Date(query.invoiceDateStart);
@@ -143,17 +149,26 @@ const listInvoices = async (query) => {
   return { invoices: formattedInvoices, meta };
 };
 
+const Payment = require('../payments/payment.model');
+
 const getInvoiceById = async (id) => {
   const invoice = await Invoice.findById(id)
     .populate('customerId', 'name email company phone gstin address')
     .populate('subscriptionId', 'subscriptionNumber billingCycle startDate expiryDate')
     .populate('appliedDiscountIds', 'name value type')
-    .populate('appliedTaxIds', 'name rate');
+    .populate('appliedTaxIds', 'name rate')
+    .lean();
 
   if (!invoice) {
     throw ApiError.notFound('Invoice not found');
   }
 
+  const payments = await Payment.find({ invoiceId: id })
+    .sort({ paidAt: -1, createdAt: -1 })
+    .populate('recordedBy', 'name email')
+    .lean();
+
+  invoice.payments = payments;
   return invoice;
 };
 

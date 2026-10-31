@@ -78,11 +78,11 @@ export const subscriptionService = {
   },
 
   /**
-   * Fail-safe related data endpoints for Details page (Phase 5 stubs)
+   * Related data endpoints for Details page
    */
   getInvoices: async (subscriptionId, limit = 10) => {
     try {
-      const res = await api.get(`/subscriptions/${subscriptionId}/invoices`, { params: { limit } });
+      const res = await api.get('/invoices', { params: { subscriptionId, limit } });
       return res.data?.data || [];
     } catch {
       return [];
@@ -91,8 +91,18 @@ export const subscriptionService = {
 
   getPayments: async (subscriptionId, limit = 10) => {
     try {
-      const res = await api.get(`/subscriptions/${subscriptionId}/payments`, { params: { limit } });
-      return res.data?.data || [];
+      // Fetch invoices for subscription, then payments for those invoices if needed, or query by subscription invoices
+      const invRes = await api.get('/invoices', { params: { subscriptionId, limit: 100 } });
+      const invoices = invRes.data?.data || [];
+      if (!invoices.length) return [];
+      
+      const invoiceIds = invoices.map(i => i._id);
+      // Fetch payments for the first invoice or list payments matching the customer
+      const pmtPromises = invoiceIds.slice(0, 5).map(invId => 
+        api.get('/payments', { params: { invoiceId: invId, limit } }).then(r => r.data?.data || []).catch(() => [])
+      );
+      const allPmts = (await Promise.all(pmtPromises)).flat();
+      return allPmts.slice(0, limit);
     } catch {
       return [];
     }

@@ -59,6 +59,12 @@ router.post(
   invoiceController.createInvoice
 );
 
+router.post(
+  '/generate',
+  requirePermission(PERMISSIONS.INVOICES_MANAGE),
+  invoiceController.runBilling
+);
+
 router.get(
   '/',
   requirePermission(PERMISSIONS.INVOICES_READ),

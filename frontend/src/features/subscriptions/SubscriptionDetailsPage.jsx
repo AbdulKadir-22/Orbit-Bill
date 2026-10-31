@@ -606,10 +606,10 @@ export const SubscriptionDetailsPage = () => {
                         <td className="py-3 px-3 font-semibold text-[#0b0b0b] font-mono">{inv.invoiceNumber}</td>
                         <td className="py-3 px-3 text-[#525252]">{formatDate(inv.invoiceDate || inv.createdAt)}</td>
                         <td className="py-3 px-3 text-[#525252]">{formatDate(inv.dueDate)}</td>
-                        <td className="py-3 px-3 text-right font-mono font-medium text-[#171717]">{formatCurrency(inv.total)}</td>
+                        <td className="py-3 px-3 text-right font-mono font-medium text-[#171717]">{formatCurrency(inv.grandTotal ?? inv.total)}</td>
                         <td className="py-3 px-3">
-                          <Badge variant={getStatusBadgeVariant('invoice', inv.status)}>
-                            {inv.status}
+                          <Badge variant={getStatusBadgeVariant('invoice', inv.isOverdue ? 'overdue' : inv.status)}>
+                            {inv.isOverdue ? 'Overdue' : inv.status}
                           </Badge>
                         </td>
                       </tr>
@@ -644,9 +644,9 @@ export const SubscriptionDetailsPage = () => {
                       <tr key={pmt._id || idx} className="hover:bg-[#fafafa]">
                         <td className="py-3 px-3 text-xs text-[#737373] font-mono">{idx + 1}</td>
                         <td className="py-3 px-3 font-semibold text-[#0b0b0b] font-mono">{pmt.paymentNumber || `PAY-${idx + 1}`}</td>
-                        <td className="py-3 px-3 text-[#525252]">{formatDate(pmt.paymentDate || pmt.createdAt)}</td>
+                        <td className="py-3 px-3 text-[#525252]">{formatDate(pmt.paidAt || pmt.paymentDate || pmt.createdAt)}</td>
                         <td className="py-3 px-3 text-right font-mono font-medium text-[#171717]">{formatCurrency(pmt.amount)}</td>
-                        <td className="py-3 px-3 text-[#525252] capitalize">{pmt.paymentMethod || 'Bank Transfer'}</td>
+                        <td className="py-3 px-3 text-[#525252] capitalize">{pmt.method || pmt.paymentMethod || 'Bank Transfer'}</td>
                       </tr>
                     ))}
                   </tbody>

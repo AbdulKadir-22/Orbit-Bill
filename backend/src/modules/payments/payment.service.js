@@ -139,12 +139,18 @@ const listPayments = async (query) => {
   if (query.invoiceId) filter.invoiceId = query.invoiceId;
   if (query.customerId) filter.customerId = query.customerId;
   if (query.method) filter.method = query.method;
-  if (query.status) filter.status = query.status;
+  if (query.status) {
+    filter.status = query.status;
+  } else {
+    filter.status = 'recorded';
+  }
 
-  if (query.startDate || query.endDate) {
+  const start = query.fromDate || query.startDate;
+  const end = query.toDate || query.endDate;
+  if (start || end) {
     filter.paidAt = {};
-    if (query.startDate) filter.paidAt.$gte = new Date(query.startDate);
-    if (query.endDate) filter.paidAt.$lte = new Date(query.endDate);
+    if (start) filter.paidAt.$gte = new Date(start);
+    if (end) filter.paidAt.$lte = new Date(end);
   }
 
   if (query.search) {

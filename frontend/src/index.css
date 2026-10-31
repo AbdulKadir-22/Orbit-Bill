@@ -85,3 +85,49 @@ body {
 .border-card {
   border-color: var(--color-card-border);
 }
+
+/* Print styles for Invoice printing */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  
+  /* Hide sidebar, topbar, action buttons, drawers, and toasts */
+  header,
+  nav,
+  aside,
+  .lg\:pl-64,
+  div[class*="pl-64"] {
+    padding-left: 0 !important;
+  }
+
+  .hidden-on-print,
+  button,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Make main container full width and remove limits */
+  main {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .invoice-print-area {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Clean borders and backgrounds */
+  .shadow-soft,
+  .shadow-elevated,
+  .shadow-dropdown,
+  .shadow-sm,
+  .shadow-xl {
+    box-shadow: none !important;
+  }
+}

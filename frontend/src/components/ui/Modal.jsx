@@ -10,6 +10,8 @@ export const Modal = ({
   isOpen,
   onClose,
   title,
+  description,
+  footer,
   children,
   maxWidth = 'max-w-md',
 }) => {
@@ -45,14 +47,19 @@ export const Modal = ({
         className={`w-full ${maxWidth} bg-white rounded-[16px] border border-black/10 shadow-2xl p-6 z-10 relative flex flex-col gap-4 animate-in zoom-in-95 duration-150`}
       >
         {title && (
-          <div className="flex items-center justify-between pb-3 border-b border-black/5">
-            <h3 id="modal-title" className="font-semibold text-lg text-neutral-900 tracking-tight">
-              {title}
-            </h3>
+          <div className="flex items-start justify-between pb-3 border-b border-black/5">
+            <div>
+              <h3 id="modal-title" className="font-semibold text-lg text-neutral-900 tracking-tight">
+                {title}
+              </h3>
+              {description && (
+                <p className="text-xs text-neutral-500 mt-0.5">{description}</p>
+              )}
+            </div>
             <button
               type="button"
               onClick={onClose}
-              className="p-1 rounded-[8px] text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition-colors cursor-pointer"
+              className="p-1 rounded-[8px] text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition-colors cursor-pointer shrink-0 ml-2"
               aria-label={STRINGS.UI.CLOSE}
             >
               <X size={18} />
@@ -60,6 +67,11 @@ export const Modal = ({
           </div>
         )}
         <div>{children}</div>
+        {footer && (
+          <div className="pt-3 border-t border-black/5 mt-1">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

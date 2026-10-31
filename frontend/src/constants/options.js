@@ -34,3 +34,37 @@ export const STATUS_FILTER_OPTIONS = [
   { value: 'true', label: 'Active' },
   { value: 'false', label: 'Inactive' },
 ];
+
+export const PAYMENT_METHODS = [
+  { value: 'cash', label: 'Cash' },
+  { value: 'bank_transfer', label: 'Bank Transfer' },
+  { value: 'upi', label: 'UPI' },
+  { value: 'card', label: 'Card' },
+  { value: 'credit_card', label: 'Credit Card' },
+  { value: 'debit_card', label: 'Debit Card' },
+  { value: 'cheque', label: 'Cheque' },
+  { value: 'other', label: 'Other' },
+];
+
+export const PAYMENT_METHOD_FILTER_OPTIONS = [
+  { value: '', label: 'All Methods' },
+  ...PAYMENT_METHODS,
+];
+
+export const getPaymentMethodLabel = (val) => {
+  if (!val) return '—';
+  const found = PAYMENT_METHODS.find((m) => m.value === val);
+  if (found) return found.label;
+  return String(val)
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+};
+
+export const INVOICE_STATUS_OPTIONS = [
+  { value: '', label: 'All Status' },
+  { value: 'draft', label: 'Draft' },
+  { value: 'confirmed', label: 'Confirmed' },
+  { value: 'paid', label: 'Paid' },
+  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'overdue', label: 'Overdue' },
+];

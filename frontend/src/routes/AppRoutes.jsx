@@ -19,6 +19,9 @@ import { QuotationsPage } from '../features/quotations/QuotationsPage';
 import { QuotationFormPage } from '../features/quotations/QuotationFormPage';
 import { SubscriptionsPage } from '../features/subscriptions/SubscriptionsPage';
 import { SubscriptionDetailsPage } from '../features/subscriptions/SubscriptionDetailsPage';
+import { InvoicesPage } from '../features/invoices/InvoicesPage';
+import { InvoiceDetailsPage } from '../features/invoices/InvoiceDetailsPage';
+import { PaymentsPage } from '../features/payments/PaymentsPage';
 
 /**
  * Root Router matching all required role guards & routes:
@@ -159,7 +162,7 @@ export const AppRoutes = () => {
           path="/invoices"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title={STRINGS.NAV.INVOICES} />
+              <InvoicesPage />
             </RoleRoute>
           }
         />
@@ -167,7 +170,7 @@ export const AppRoutes = () => {
           path="/invoices/:id"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title="Invoice Details" />
+              <InvoiceDetailsPage />
             </RoleRoute>
           }
         />
@@ -175,7 +178,7 @@ export const AppRoutes = () => {
           path="/payments"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title={STRINGS.NAV.PAYMENTS} />
+              <PaymentsPage />
             </RoleRoute>
           }
         />
