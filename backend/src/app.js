@@ -12,6 +12,11 @@ const swaggerSpec = require('./config/swagger');
 
 const authRoutes = require('./modules/auth/auth.routes');
 const staffRoutes = require('./modules/users/user.routes');
+const productRoutes = require('./modules/products/product.routes');
+const planRoutes = require('./modules/plans/plan.routes');
+const taxRoutes = require('./modules/taxes/tax.routes');
+const discountRoutes = require('./modules/discounts/discount.routes');
+const customerRoutes = require('./modules/customers/customer.routes');
 
 const { globalRateLimiter } = require('./middlewares/rateLimit.middleware');
 const notFoundHandler = require('./middlewares/notFound.middleware');
@@ -77,6 +82,11 @@ if (env.SWAGGER_ENABLED) {
 const apiV1Router = express.Router();
 apiV1Router.use('/auth', authRoutes);
 apiV1Router.use('/staff', staffRoutes);
+apiV1Router.use('/products', productRoutes);
+apiV1Router.use('/plans', planRoutes);
+apiV1Router.use('/taxes', taxRoutes);
+apiV1Router.use('/discounts', discountRoutes);
+apiV1Router.use('/customers', customerRoutes);
 
 app.use('/api/v1', apiV1Router);
 

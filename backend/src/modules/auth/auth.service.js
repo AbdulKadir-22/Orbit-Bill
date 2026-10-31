@@ -1,4 +1,6 @@
+const mongoose = require('mongoose');
 const User = require('../users/user.model');
+const Customer = require('../customers/customer.model');
 const ApiError = require('../../utils/ApiError');
 const ROLES = require('../../constants/roles');
 const {
@@ -17,7 +19,7 @@ const env = require('../../config/env');
 /**
  * Creates authentication token pair and securely stores hashed refresh token on user.
  */
-const generateAuthTokens = async (user) => {
+const generateAuthTokens = async (user, session = null) => {
   const tokenPayload = {
     id: user._id.toString(),
     role: user.role,
@@ -29,7 +31,11 @@ const generateAuthTokens = async (user) => {
 
   // Store only the SHA-256 hash of the refresh token
   user.refreshTokenHash = hashToken(refreshToken);
-  await user.save();
+  if (session) {
+    await user.save({ session });
+  } else {
+    await user.save();
+  }
 
   return { accessToken, refreshToken };
 };
@@ -37,32 +43,79 @@ const generateAuthTokens = async (user) => {
 /**
  * Public customer self-registration.
  * Any role sent in body is completely ignored and hardcoded to CUSTOMER.
+ * Creates both User and Customer records linked atomically via a MongoDB transaction.
  */
 const register = async ({ name, email, password }) => {
   const normalizedEmail = email.toLowerCase().trim();
 
-  const existingUser = await User.findOne({ email: normalizedEmail });
-  if (existingUser) {
+  const [existingUser, existingCustomer] = await Promise.all([
+    User.findOne({ email: normalizedEmail }),
+    Customer.findOne({ email: normalizedEmail }),
+  ]);
+
+  if (existingUser || existingCustomer) {
     throw ApiError.conflict('Email is already registered', [
       { field: 'email', message: 'Email is already in use' },
     ]);
   }
 
-  const user = await User.create({
-    name,
-    email: normalizedEmail,
-    password,
-    role: ROLES.CUSTOMER,
-    isActive: true,
-  });
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  const { accessToken, refreshToken } = await generateAuthTokens(user);
+  let user;
+  let customer;
+  let accessToken;
+  let refreshToken;
+
+  try {
+    // 1. Create Customer record first
+    const [createdCustomer] = await Customer.create(
+      [
+        {
+          name,
+          email: normalizedEmail,
+          isActive: true,
+        },
+      ],
+      { session }
+    );
+    customer = createdCustomer;
+
+    // 2. Create User record with customerId linked
+    const [createdUser] = await User.create(
+      [
+        {
+          name,
+          email: normalizedEmail,
+          password,
+          role: ROLES.CUSTOMER,
+          customerId: customer._id,
+          isActive: true,
+        },
+      ],
+      { session }
+    );
+    user = createdUser;
+
+    // 3. Issue and hash tokens within the transaction
+    const tokens = await generateAuthTokens(user, session);
+    accessToken = tokens.accessToken;
+    refreshToken = tokens.refreshToken;
+
+    await session.commitTransaction();
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
 
   // Send welcome email asynchronously without blocking registration
   sendWelcomeEmail({ name: user.name, email: user.email }).catch(() => {});
 
   return {
     user,
+    customer,
     accessToken,
     refreshToken,
   };

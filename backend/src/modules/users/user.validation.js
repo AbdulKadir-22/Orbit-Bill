@@ -1,6 +1,6 @@
 const { z } = require('zod');
 const { passwordSchema, emailSchema } = require('../auth/auth.validation');
-const { ALL_PERMISSIONS } = require('../../constants/permissions');
+const { ALL_PERMISSIONS, DEFAULT_STAFF_PERMISSIONS } = require('../../constants/permissions');
 
 const createStaffValidation = {
   body: z.object({
@@ -9,7 +9,7 @@ const createStaffValidation = {
     password: passwordSchema,
     permissions: z.array(z.enum(ALL_PERMISSIONS, {
       errorMap: () => ({ message: 'Invalid permission specified' }),
-    })).default([]),
+    })).default([...DEFAULT_STAFF_PERMISSIONS]),
   }),
 };
 

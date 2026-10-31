@@ -1,4 +1,8 @@
 const PERMISSIONS = Object.freeze({
+  PRODUCTS_VIEW: 'products:view',
+  PLANS_VIEW: 'plans:view',
+  TAXES_VIEW: 'taxes:view',
+  DISCOUNTS_VIEW: 'discounts:view',
   CUSTOMERS_READ: 'customers:read',
   CUSTOMERS_WRITE: 'customers:write',
   QUOTATIONS_READ: 'quotations:read',
@@ -15,7 +19,19 @@ const PERMISSIONS = Object.freeze({
 
 const ALL_PERMISSIONS = Object.values(PERMISSIONS);
 
+// Default permissions granted to staff upon creation
+const DEFAULT_STAFF_PERMISSIONS = Object.freeze([
+  PERMISSIONS.PRODUCTS_VIEW,
+  PERMISSIONS.PLANS_VIEW,
+  PERMISSIONS.TAXES_VIEW,
+  PERMISSIONS.DISCOUNTS_VIEW,
+  PERMISSIONS.CUSTOMERS_READ,
+  PERMISSIONS.CUSTOMERS_WRITE,
+  PERMISSIONS.DASHBOARD_VIEW,
+]);
+
 module.exports = {
   PERMISSIONS,
   ALL_PERMISSIONS,
+  DEFAULT_STAFF_PERMISSIONS,
 };
