@@ -67,6 +67,11 @@ const convertQuotation = asyncHandler(async (req, res) => {
   return ApiResponse.created(res, 'Quotation converted into subscription successfully', result);
 });
 
+const calculatePreview = asyncHandler(async (req, res) => {
+  const result = await quotationService.calculatePreview(req.body.lines, req.user);
+  return ApiResponse.success(res, 'Calculation preview computed', result);
+});
+
 module.exports = {
   createQuotation,
   createTemplate,
@@ -81,4 +86,5 @@ module.exports = {
   sendQuotation,
   rejectQuotation,
   convertQuotation,
+  calculatePreview,
 };

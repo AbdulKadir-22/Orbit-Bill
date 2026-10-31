@@ -11,6 +11,15 @@ const validate = (schemas = {}) => {
 
     ['body', 'params', 'query'].forEach((key) => {
       if (schemas[key]) {
+        // For query parameters, strip empty string values so optional schema fields aren't rejected
+        if (key === 'query' && req.query && typeof req.query === 'object') {
+          Object.keys(req.query).forEach((qKey) => {
+            if (req.query[qKey] === '') {
+              delete req.query[qKey];
+            }
+          });
+        }
+
         const result = schemas[key].safeParse(req[key]);
         if (!result.success) {
           result.error.issues.forEach((issue) => {

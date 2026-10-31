@@ -115,7 +115,7 @@ const generateInvoicePdf = (invoice, res, download = false) => {
 
   // 4. Line Items Rows
   let y = tableTop + 28;
-  const currencySymbol = env.DEFAULT_CURRENCY === 'INR' ? '₹' : '$';
+  const currencySymbol = '₹';
 
   (invoice.lines || []).forEach((line) => {
     doc

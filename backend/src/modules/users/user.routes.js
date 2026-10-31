@@ -150,7 +150,8 @@ router.route('/')
  */
 router.route('/:id')
   .get(validate(staffIdParamValidation), userController.getStaffById)
-  .patch(validate(updateStaffValidation), userController.updateStaff);
+  .patch(validate(updateStaffValidation), userController.updateStaff)
+  .delete(validate(staffIdParamValidation), userController.deleteStaff);
 
 /**
  * @swagger

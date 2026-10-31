@@ -5,9 +5,11 @@
 export const PageHeader = ({
   title,
   subtitle,
+  action,
   children,
   className = '',
 }) => {
+  const actionsContent = children || action;
   return (
     <div
       className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-black/[0.06] mb-6 ${className}`}
@@ -20,7 +22,7 @@ export const PageHeader = ({
           <p className="text-sm text-neutral-500 mt-1">{subtitle}</p>
         )}
       </div>
-      {children && <div className="flex items-center gap-3 shrink-0">{children}</div>}
+      {actionsContent && <div className="flex items-center gap-3 shrink-0">{actionsContent}</div>}
     </div>
   );
 };

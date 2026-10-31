@@ -4,7 +4,10 @@ const paymentService = require('./payment.service');
 
 const recordPayment = asyncHandler(async (req, res) => {
   const result = await paymentService.recordPayment(req.body, req.user);
-  return ApiResponse.created(res, 'Payment recorded successfully', result.payment);
+  return ApiResponse.created(res, 'Payment recorded successfully', {
+    ...result.payment.toObject?.() || result.payment,
+    invoice: result.invoice,
+  });
 });
 
 const listPayments = asyncHandler(async (req, res) => {
@@ -27,10 +30,20 @@ const voidPayment = asyncHandler(async (req, res) => {
   return ApiResponse.success(res, 'Payment voided successfully', result);
 });
 
+const deletePayment = asyncHandler(async (req, res) => {
+  const result = await paymentService.voidPayment(
+    req.params.id,
+    req.body?.reason || 'Payment deleted by admin',
+    req.user
+  );
+  return ApiResponse.success(res, 'Payment deleted successfully', result);
+});
+
 module.exports = {
   recordPayment,
   listPayments,
   getPaymentById,
   updatePayment,
   voidPayment,
+  deletePayment,
 };

@@ -15,7 +15,7 @@ const listInvoices = asyncHandler(async (req, res) => {
 });
 
 const getInvoiceById = asyncHandler(async (req, res) => {
-  const invoice = await invoiceService.getInvoiceById(req.params.id);
+  const invoice = await invoiceService.getInvoiceById(req.params.id, req.user);
   return ApiResponse.success(res, 'Invoice details retrieved successfully', invoice);
 });
 

@@ -85,3 +85,28 @@ body {
 .border-card {
   border-color: var(--color-card-border);
 }
+
+/* Print styles for Invoice printing */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    inset: 0;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    background-color: #ffffff !important;
+    padding: 20px !important;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+}

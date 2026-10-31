@@ -67,12 +67,18 @@ const cancelSubscription = asyncHandler(async (req, res) => {
   return ApiResponse.success(res, 'Subscription cancelled successfully', subscription);
 });
 
+const deleteSubscription = asyncHandler(async (req, res) => {
+  const subscription = await subscriptionService.deleteSubscription(req.params.id, req.user);
+  return ApiResponse.success(res, 'Subscription deleted successfully', subscription);
+});
+
 module.exports = {
   createSubscription,
   listSubscriptions,
   getSubscriptionById,
   getSubscriptionHistory,
   updateSubscription,
+  deleteSubscription,
   moveToQuotation,
   confirmSubscription,
   activateSubscription,

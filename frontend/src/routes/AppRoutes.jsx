@@ -5,8 +5,27 @@ import { STRINGS } from '../constants/strings';
 import { ProtectedRoute } from './ProtectedRoute';
 import { RoleRoute } from './RoleRoute';
 import { AppShell } from '../components/layout/AppShell';
-import { PlaceholderPage } from '../components/layout/PlaceholderPage';
 import { AuthPage } from '../features/auth/AuthPage';
+import { DashboardPage } from '../features/dashboard/DashboardPage';
+import { ReportsPage } from '../features/reports/ReportsPage';
+import { CustomerDashboardPage } from '../features/portal/CustomerDashboardPage';
+import { MySubscriptionsPage } from '../features/portal/MySubscriptionsPage';
+import { MyInvoicesPage } from '../features/portal/MyInvoicesPage';
+import { ProductsPage } from '../features/products/ProductsPage';
+import { ProductFormPage } from '../features/products/ProductFormPage';
+import { PlansPage } from '../features/plans/PlansPage';
+import { TaxesPage } from '../features/taxes/TaxesPage';
+import { DiscountsPage } from '../features/discounts/DiscountsPage';
+import { CustomersPage } from '../features/customers/CustomersPage';
+import { CustomerDetailsPage } from '../features/customers/CustomerDetailsPage';
+import { StaffPage } from '../features/staff/StaffPage';
+import { QuotationsPage } from '../features/quotations/QuotationsPage';
+import { QuotationFormPage } from '../features/quotations/QuotationFormPage';
+import { SubscriptionsPage } from '../features/subscriptions/SubscriptionsPage';
+import { SubscriptionDetailsPage } from '../features/subscriptions/SubscriptionDetailsPage';
+import { InvoicesPage } from '../features/invoices/InvoicesPage';
+import { InvoiceDetailsPage } from '../features/invoices/InvoiceDetailsPage';
+import { PaymentsPage } from '../features/payments/PaymentsPage';
 
 /**
  * Root Router matching all required role guards & routes:
@@ -49,16 +68,33 @@ export const AppRoutes = () => {
         <Route
           path="/dashboard"
           element={
-            <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title={STRINGS.NAV.DASHBOARD} />
+            <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]} requiredPermission="dashboard:view">
+              <DashboardPage />
             </RoleRoute>
           }
         />
+        {/* Catalog Routes */}
         <Route
           path="/products"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title={STRINGS.NAV.PRODUCTS} />
+              <ProductsPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/products/new"
+          element={
+            <RoleRoute allowedRoles={[ROLES.ADMIN]}>
+              <ProductFormPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/products/:id/edit"
+          element={
+            <RoleRoute allowedRoles={[ROLES.ADMIN]}>
+              <ProductFormPage />
             </RoleRoute>
           }
         />
@@ -66,7 +102,7 @@ export const AppRoutes = () => {
           path="/plans"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title={STRINGS.NAV.PLANS} />
+              <PlansPage />
             </RoleRoute>
           }
         />
@@ -74,7 +110,7 @@ export const AppRoutes = () => {
           path="/customers"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title={STRINGS.NAV.CUSTOMERS} />
+              <CustomersPage />
             </RoleRoute>
           }
         />
@@ -82,7 +118,7 @@ export const AppRoutes = () => {
           path="/customers/:id"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title="Customer Details" />
+              <CustomerDetailsPage />
             </RoleRoute>
           }
         />
@@ -90,7 +126,23 @@ export const AppRoutes = () => {
           path="/quotations"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title={STRINGS.NAV.QUOTATIONS} />
+              <QuotationsPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/quotations/new"
+          element={
+            <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
+              <QuotationFormPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/quotations/:id"
+          element={
+            <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
+              <QuotationFormPage />
             </RoleRoute>
           }
         />
@@ -98,7 +150,7 @@ export const AppRoutes = () => {
           path="/subscriptions"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title={STRINGS.NAV.SUBSCRIPTIONS} />
+              <SubscriptionsPage />
             </RoleRoute>
           }
         />
@@ -106,7 +158,7 @@ export const AppRoutes = () => {
           path="/subscriptions/:id"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title="Subscription Details" />
+              <SubscriptionDetailsPage />
             </RoleRoute>
           }
         />
@@ -114,15 +166,15 @@ export const AppRoutes = () => {
           path="/invoices"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title={STRINGS.NAV.INVOICES} />
+              <InvoicesPage />
             </RoleRoute>
           }
         />
         <Route
           path="/invoices/:id"
           element={
-            <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title="Invoice Details" />
+            <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF, ROLES.CUSTOMER]}>
+              <InvoiceDetailsPage />
             </RoleRoute>
           }
         />
@@ -130,7 +182,7 @@ export const AppRoutes = () => {
           path="/payments"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title={STRINGS.NAV.PAYMENTS} />
+              <PaymentsPage />
             </RoleRoute>
           }
         />
@@ -138,7 +190,7 @@ export const AppRoutes = () => {
           path="/taxes"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title={STRINGS.NAV.TAXES} />
+              <TaxesPage />
             </RoleRoute>
           }
         />
@@ -146,15 +198,15 @@ export const AppRoutes = () => {
           path="/discounts"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title={STRINGS.NAV.DISCOUNTS} />
+              <DiscountsPage />
             </RoleRoute>
           }
         />
         <Route
           path="/reports"
           element={
-            <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title={STRINGS.NAV.REPORTS} />
+            <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]} requiredPermission="reports:view">
+              <ReportsPage />
             </RoleRoute>
           }
         />
@@ -164,7 +216,7 @@ export const AppRoutes = () => {
           path="/staff"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN]}>
-              <PlaceholderPage title={STRINGS.NAV.STAFF} />
+              <StaffPage />
             </RoleRoute>
           }
         />
@@ -174,7 +226,7 @@ export const AppRoutes = () => {
           path="/my/dashboard"
           element={
             <RoleRoute allowedRoles={[ROLES.CUSTOMER]}>
-              <PlaceholderPage title={STRINGS.NAV.MY_DASHBOARD} />
+              <CustomerDashboardPage />
             </RoleRoute>
           }
         />
@@ -182,7 +234,7 @@ export const AppRoutes = () => {
           path="/my/subscriptions"
           element={
             <RoleRoute allowedRoles={[ROLES.CUSTOMER]}>
-              <PlaceholderPage title={STRINGS.NAV.MY_SUBSCRIPTIONS} />
+              <MySubscriptionsPage />
             </RoleRoute>
           }
         />
@@ -190,7 +242,7 @@ export const AppRoutes = () => {
           path="/my/invoices"
           element={
             <RoleRoute allowedRoles={[ROLES.CUSTOMER]}>
-              <PlaceholderPage title={STRINGS.NAV.MY_INVOICES} />
+              <MyInvoicesPage />
             </RoleRoute>
           }
         />

@@ -53,7 +53,7 @@ const register = async ({ name, email, password }) => {
     Customer.findOne({ email: normalizedEmail }),
   ]);
 
-  if (existingUser || existingCustomer) {
+  if (existingUser) {
     throw ApiError.conflict('Email is already registered', [
       { field: 'email', message: 'Email is already in use' },
     ]);
@@ -63,25 +63,27 @@ const register = async ({ name, email, password }) => {
   session.startTransaction();
 
   let user;
-  let customer;
+  let customer = existingCustomer;
   let accessToken;
   let refreshToken;
 
   try {
-    // 1. Create Customer record first
-    const [createdCustomer] = await Customer.create(
-      [
-        {
-          name,
-          email: normalizedEmail,
-          isActive: true,
-        },
-      ],
-      { session }
-    );
-    customer = createdCustomer;
+    // 1. If customer doesn't already exist from staff pre-creation, create Customer record
+    if (!customer) {
+      const [createdCustomer] = await Customer.create(
+        [
+          {
+            name,
+            email: normalizedEmail,
+            isActive: true,
+          },
+        ],
+        { session }
+      );
+      customer = createdCustomer;
+    }
 
-    // 2. Create User record with customerId linked
+    // 2. Create User record with customerId linked to the existing or new Customer
     const [createdUser] = await User.create(
       [
         {

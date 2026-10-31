@@ -59,6 +59,12 @@ router.post(
   invoiceController.createInvoice
 );
 
+router.post(
+  '/generate',
+  requirePermission(PERMISSIONS.INVOICES_MANAGE),
+  invoiceController.runBilling
+);
+
 router.get(
   '/',
   requirePermission(PERMISSIONS.INVOICES_READ),
@@ -114,7 +120,7 @@ router.get(
  */
 router.route('/:id')
   .get(
-    requirePermission(PERMISSIONS.INVOICES_READ),
+    authorizeRoles(ROLES.ADMIN, ROLES.STAFF, ROLES.CUSTOMER),
     validate(invoiceIdParamValidation),
     invoiceController.getInvoiceById
   )

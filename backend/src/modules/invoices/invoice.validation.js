@@ -43,6 +43,11 @@ const listInvoicesValidation = {
       if (val === 'false' || val === false) return false;
       return undefined;
     }, z.boolean().optional()),
+    payable: z.preprocess((val) => {
+      if (val === 'true' || val === true) return true;
+      if (val === 'false' || val === false) return false;
+      return undefined;
+    }, z.boolean().optional()),
     customerId: z.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
     subscriptionId: z.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
     invoiceDateStart: z.string().datetime().optional(),

@@ -145,6 +145,23 @@ const updateStaffPermissions = async (staffId, permissions) => {
   return staff;
 };
 
+/**
+ * Delete a staff member.
+ */
+const deleteStaff = async (staffId, adminUser) => {
+  if (adminUser && adminUser._id.toString() === staffId.toString()) {
+    throw ApiError.badRequest('Administrators cannot delete their own account');
+  }
+
+  const staff = await User.findOne({ _id: staffId, role: ROLES.STAFF });
+  if (!staff) {
+    throw ApiError.notFound('Staff member not found');
+  }
+
+  await User.findByIdAndDelete(staffId);
+  return { staff, message: 'Staff member deleted successfully' };
+};
+
 module.exports = {
   createStaff,
   listStaff,
@@ -152,4 +169,5 @@ module.exports = {
   updateStaff,
   updateStaffStatus,
   updateStaffPermissions,
+  deleteStaff,
 };
