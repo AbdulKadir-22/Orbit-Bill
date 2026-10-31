@@ -6,6 +6,7 @@ const {
   resetPasswordEmailTemplate,
   staffInviteEmailTemplate,
 } = require('./templates');
+const { quotationSentTemplate } = require('./templates/quotation-sent');
 
 /**
  * Sends an email via Resend SDK or logs it if in dev / key is missing.
@@ -73,9 +74,24 @@ const sendStaffInviteEmail = async ({ name, email, temporaryPassword }) => {
   });
 };
 
+const sendQuotationEmail = async ({ quoteNumber, customerName, customerEmail, validUntil, grandTotal, lines }) => {
+  return sendEmail({
+    to: customerEmail,
+    subject: `Quotation ${quoteNumber} from OrbitBill`,
+    html: quotationSentTemplate({
+      quoteNumber,
+      customerName,
+      validUntil,
+      grandTotal,
+      lines,
+    }),
+  });
+};
+
 module.exports = {
   sendEmail,
   sendWelcomeEmail,
   sendPasswordResetEmail,
   sendStaffInviteEmail,
+  sendQuotationEmail,
 };

@@ -9,6 +9,10 @@ const startServer = async () => {
   // Connect to Database
   await connectDB();
 
+  // Initialize automated background cron jobs
+  const { initSubscriptionCron } = require('./modules/subscriptions/subscription.jobs');
+  initSubscriptionCron();
+
   // Start HTTP server
   server = app.listen(env.PORT, () => {
     logger.info(`OrbitBill API running in ${env.NODE_ENV} mode on port ${env.PORT}`);

@@ -1,5 +1,7 @@
 const Customer = require('./customer.model');
 const User = require('../users/user.model');
+const Quotation = require('../quotations/quotation.model');
+const Subscription = require('../subscriptions/subscription.model');
 const ApiError = require('../../utils/ApiError');
 const ROLES = require('../../constants/roles');
 const { parsePagination, buildPaginationMeta } = require('../../utils/pagination');
@@ -9,7 +11,11 @@ const { sendPasswordResetEmail } = require('../../emails/email.service');
 const env = require('../../config/env');
 
 const isReferenced = async (customerId) => {
-  return false;
+  const [quoteCount, subCount] = await Promise.all([
+    Quotation.countDocuments({ customerId }),
+    Subscription.countDocuments({ customerId }),
+  ]);
+  return (quoteCount + subCount) > 0;
 };
 
 const createCustomer = async (data, creatorId = null) => {
@@ -181,7 +187,7 @@ const createPortalAccount = async (customerId, creatorId) => {
 };
 
 /**
- * Summary placeholder for Phase 3 and 4 subscriptions, quotations, and invoices.
+ * Summary for customer: retrieves subscriptions, quotations, and counts (invoices remains placeholder for Phase 4).
  */
 const getCustomerSummary = async (customerId) => {
   const customer = await Customer.findById(customerId);
@@ -189,13 +195,25 @@ const getCustomerSummary = async (customerId) => {
     throw ApiError.notFound('Customer not found');
   }
 
-  // TODO: In Phase 3 and Phase 4, populate subscriptions, quotations, and invoices
+  const [subscriptions, totalSubscriptions, quotations, totalQuotations] = await Promise.all([
+    Subscription.find({ customerId: customer._id }).sort({ createdAt: -1 }).limit(5),
+    Subscription.countDocuments({ customerId: customer._id }),
+    Quotation.find({ customerId: customer._id, isTemplate: false }).sort({ createdAt: -1 }).limit(5),
+    Quotation.countDocuments({ customerId: customer._id, isTemplate: false }),
+  ]);
+
   return {
     customerId: customer._id,
     customerName: customer.name,
-    subscriptions: [],
-    quotations: [],
-    invoices: [],
+    customerEmail: customer.email,
+    stats: {
+      totalSubscriptions,
+      totalQuotations,
+      totalInvoices: 0,
+    },
+    latestSubscriptions: subscriptions,
+    latestQuotations: quotations,
+    invoices: [], // TODO: Populated in Phase 4
   };
 };
 

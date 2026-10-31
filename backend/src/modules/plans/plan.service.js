@@ -1,17 +1,22 @@
 const Plan = require('./plan.model');
+const Quotation = require('../quotations/quotation.model');
+const Subscription = require('../subscriptions/subscription.model');
 const ApiError = require('../../utils/ApiError');
 const { parsePagination, buildPaginationMeta } = require('../../utils/pagination');
 const { buildSearchQuery } = require('../../utils/search');
 
 /**
- * Checks if a plan is referenced in subscriptions.
- * TODO: In Phase 3 and Phase 4, check Subscription collection.
+ * Checks if a plan is referenced in quotations or subscriptions.
  *
  * @param {string} planId
  * @returns {Promise<boolean>}
  */
 const isReferenced = async (planId) => {
-  return false;
+  const [quoteCount, subCount] = await Promise.all([
+    Quotation.countDocuments({ 'lines.planId': planId }),
+    Subscription.countDocuments({ 'lines.planId': planId }),
+  ]);
+  return (quoteCount + subCount) > 0;
 };
 
 /**

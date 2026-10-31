@@ -1,19 +1,23 @@
 const Product = require('./product.model');
+const Quotation = require('../quotations/quotation.model');
+const Subscription = require('../subscriptions/subscription.model');
 const ApiError = require('../../utils/ApiError');
 const { parsePagination, buildPaginationMeta } = require('../../utils/pagination');
 const { buildSearchQuery } = require('../../utils/search');
 const logger = require('../../config/logger');
 
 /**
- * Checks if a product is referenced in quotations, subscriptions, or invoices.
- * TODO: In Phase 3 and Phase 4, check Quotation, Subscription, and Invoice collections.
+ * Checks if a product is referenced in quotations or subscriptions.
  *
  * @param {string} productId
  * @returns {Promise<boolean>}
  */
 const isReferenced = async (productId) => {
-  // Currently unreferenced in Phase 2
-  return false;
+  const [quoteCount, subCount] = await Promise.all([
+    Quotation.countDocuments({ 'lines.productId': productId }),
+    Subscription.countDocuments({ 'lines.productId': productId }),
+  ]);
+  return (quoteCount + subCount) > 0;
 };
 
 const createProduct = async (data, userId) => {

@@ -17,10 +17,17 @@ const planRoutes = require('./modules/plans/plan.routes');
 const taxRoutes = require('./modules/taxes/tax.routes');
 const discountRoutes = require('./modules/discounts/discount.routes');
 const customerRoutes = require('./modules/customers/customer.routes');
+const quotationRoutes = require('./modules/quotations/quotation.routes');
+const subscriptionRoutes = require('./modules/subscriptions/subscription.routes');
 
+const { runSubscriptionJobs } = require('./modules/subscriptions/subscription.jobs');
 const { globalRateLimiter } = require('./middlewares/rateLimit.middleware');
+const { authenticate } = require('./middlewares/auth.middleware');
+const { authorizeRoles } = require('./middlewares/rbac.middleware');
+const ROLES = require('./constants/roles');
 const notFoundHandler = require('./middlewares/notFound.middleware');
 const errorHandler = require('./middlewares/error.middleware');
+const ApiResponse = require('./utils/ApiResponse');
 
 const app = express();
 
@@ -87,6 +94,23 @@ apiV1Router.use('/plans', planRoutes);
 apiV1Router.use('/taxes', taxRoutes);
 apiV1Router.use('/discounts', discountRoutes);
 apiV1Router.use('/customers', customerRoutes);
+apiV1Router.use('/quotations', quotationRoutes);
+apiV1Router.use('/subscriptions', subscriptionRoutes);
+
+// Admin manual background job trigger
+apiV1Router.post(
+  '/admin/jobs/subscriptions/run',
+  authenticate,
+  authorizeRoles(ROLES.ADMIN),
+  async (req, res, next) => {
+    try {
+      const result = await runSubscriptionJobs({ triggeredBy: req.user._id });
+      return ApiResponse.success(res, 'Subscription and quotation background jobs executed successfully', result);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 app.use('/api/v1', apiV1Router);
 

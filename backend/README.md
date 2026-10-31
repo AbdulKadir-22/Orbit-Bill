@@ -1,4 +1,4 @@
-# OrbitBill Backend — Phase 2: Catalog & Customers
+# OrbitBill Backend — Phase 3: Quotations & Subscriptions
 
 OrbitBill is a modular Subscription Management System backend built with Node.js, Express, MongoDB (Mongoose), and CommonJS.
 
@@ -25,7 +25,7 @@ backend/
 │   │   └── permissions.js              # Granular RBAC permissions
 │   ├── emails/
 │   │   ├── email.service.js            # Resend integration with non-blocking error logging
-│   │   └── templates/index.js          # HTML templates: welcome, reset-password, staff-invite
+│   │   └── templates/                  # welcome, reset-password, staff-invite, quotation-sent
 │   ├── middlewares/
 │   │   ├── auth.middleware.js          # Bearer JWT verification & active user check
 │   │   ├── rbac.middleware.js          # authorizeRoles, requirePermission, ownResource helper
@@ -41,6 +41,8 @@ backend/
 │   │   ├── taxes/                      # Taxes & scoped products
 │   │   ├── discounts/                  # Fixed/percentage discounts & scoping
 │   │   ├── customers/                  # Customers, portal linking & self-service
+│   │   ├── quotations/                 # Quotations, templates & convert to subscription
+│   │   ├── subscriptions/              # Recurring subscriptions, state machine & cron jobs
 │   │   └── counters/
 │   │       └── counter.model.js        # Atomic sequence counter schema
 │   └── utils/
@@ -52,7 +54,9 @@ backend/
 │       ├── tokens.js                   # JWT generation, verification & crypto helpers
 │       ├── numberGenerator.js          # Atomic sequence generator (e.g. SUB-2026-00001)
 │       ├── pricing.js                  # Pure money math, getUnitPrice, calcLine
-│       └── discountEligibility.js       # Pure eligibility check & capped calcDiscountAmount
+│       ├── discountEligibility.js       # Pure eligibility check & capped calcDiscountAmount
+│       ├── dates.js                    # Billing cycle math, month-end clamping & leap year logic
+│       └── lineBuilder.js              # Server-side pricing, tax & preview discount calculation
 ├── .env.example
 ├── package.json
 └── README.md
@@ -107,165 +111,115 @@ Use the **Authorize** button with the Bearer JWT token obtained from `/api/v1/au
 
 ---
 
-## Phase 2 Endpoints & Sample `curl` Requests
+## Phase 3 Endpoints & Sample `curl` Requests
 
-### Products & Variants (`/api/v1/products`)
-- **Admin**: Full CRUD (`products:write`).
-- **Staff**: View only (`products:view`).
-- **Customers**: 403 Forbidden.
+### Quotations & Templates (`/api/v1/quotations`)
+- **Admin & Staff**: Full management (`quotations:read`, `quotations:write`).
+- **Customers**: Read-only for their own quotations in `sent` or `confirmed` status.
 
-#### 1. Create Product with Variants
+#### 1. Create a Quotation Template
 ```bash
-curl -X POST http://localhost:5000/api/v1/products \
-  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+curl -X POST http://localhost:5000/api/v1/quotations/templates \
+  -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Cloud ERP Base",
-    "type": "software",
-    "salesPrice": 1000,
-    "costPrice": 400,
-    "variants": [
-      { "name": "Odoo", "priceDelta": 560, "sku": "ERP-ODOO-01" }
+    "templateName": "Enterprise SaaS Template",
+    "validityDays": 45,
+    "lines": [
+      {
+        "productId": "<PRODUCT_ID>",
+        "planId": "<PLAN_ID>",
+        "quantity": 2,
+        "taxId": "<TAX_ID>"
+      }
     ]
   }'
 ```
 
-#### 2. List Products
+#### 2. Create Quotation from Template (With Live Catalog Re-Pricing)
 ```bash
-curl -X GET "http://localhost:5000/api/v1/products?page=1&limit=10&type=software&isActive=true" \
-  -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>"
-```
-
-#### 3. Add Variant to Product
-```bash
-curl -X POST http://localhost:5000/api/v1/products/<PRODUCT_ID>/variants \
-  -H "Authorization: Bearer <ADMIN_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Pro Tier",
-    "priceDelta": 200,
-    "sku": "ERP-PRO-01"
-  }'
-```
-
----
-
-### Plans (`/api/v1/plans`)
-- **Admin**: Full CRUD.
-- **Staff**: View only (`plans:view`).
-
-#### 4. Create Subscription Plan
-```bash
-curl -X POST http://localhost:5000/api/v1/plans \
-  -H "Authorization: Bearer <ADMIN_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Enterprise Annual",
-    "billingCycle": "yearly",
-    "price": 4999,
-    "minQuantity": 1,
-    "availableFrom": "2026-01-01T00:00:00.000Z",
-    "availableTo": "2026-12-31T23:59:59.000Z",
-    "autoClose": true
-  }'
-```
-
-#### 5. List Plans
-```bash
-curl -X GET "http://localhost:5000/api/v1/plans?billingCycle=yearly&available=true" \
-  -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>"
-```
-
----
-
-### Taxes (`/api/v1/taxes`)
-- **Admin**: Full CRUD.
-- **Staff**: View only (`taxes:view`).
-
-#### 6. Create Tax Rate
-```bash
-curl -X POST http://localhost:5000/api/v1/taxes \
-  -H "Authorization: Bearer <ADMIN_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "GST 18%",
-    "rate": 18,
-    "appliesTo": "all"
-  }'
-```
-
----
-
-### Discounts (`/api/v1/discounts`)
-- **Admin**: Full CRUD.
-- **Staff**: View only (`discounts:view`).
-
-#### 7. Create Discount Rule
-```bash
-curl -X POST http://localhost:5000/api/v1/discounts \
-  -H "Authorization: Bearer <ADMIN_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Early Bird 15%",
-    "type": "percentage",
-    "value": 15,
-    "minPurchase": 1000,
-    "appliesTo": "products",
-    "productIds": ["<PRODUCT_ID>"],
-    "usageLimit": 100
-  }'
-```
-
-#### 8. List Discounts by Status
-```bash
-curl -X GET "http://localhost:5000/api/v1/discounts?status=running" \
-  -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>"
-```
-
----
-
-### Customers (`/api/v1/customers`)
-- **Admin & Staff**: Full CRUD with permissions (`customers:read`, `customers:write`).
-- **Customers**: Profile self-service via `/me`.
-
-#### 9. Customer Self-Service Profile (`GET /me`, `PATCH /me`)
-```bash
-# Read profile
-curl -X GET http://localhost:5000/api/v1/customers/me \
-  -H "Authorization: Bearer <CUSTOMER_TOKEN>"
-
-# Update profile
-curl -X PATCH http://localhost:5000/api/v1/customers/me \
-  -H "Authorization: Bearer <CUSTOMER_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "company": "Acme Global Solutions Ltd",
-    "phone": "+91 9876543210"
-  }'
-```
-
-#### 10. Staff/Admin Create Customer
-```bash
-curl -X POST http://localhost:5000/api/v1/customers \
+curl -X POST http://localhost:5000/api/v1/quotations/from-template/<TEMPLATE_ID> \
   -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Tata Consultancy Services",
-    "email": "billing@tcs.example.com",
-    "company": "TCS Ltd",
-    "gstin": "27AABCU9603R1ZN",
-    "phone": "+91 2267789999"
+    "customerId": "<CUSTOMER_ID>",
+    "validityDays": 30
   }'
 ```
 
-#### 11. Create Portal Account for Customer
+#### 3. Send Quotation to Customer (Triggers Email via Resend)
 ```bash
-curl -X POST http://localhost:5000/api/v1/customers/<CUSTOMER_ID>/portal-account \
+curl -X POST http://localhost:5000/api/v1/quotations/<QUOTATION_ID>/send \
   -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>"
 ```
 
-#### 12. Customer Summary Placeholder
+#### 4. Convert Quotation into a Subscription (Atomic MongoDB Transaction)
 ```bash
-curl -X GET http://localhost:5000/api/v1/customers/<CUSTOMER_ID>/summary \
+curl -X POST http://localhost:5000/api/v1/quotations/<QUOTATION_ID>/convert \
+  -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "startDate": "2026-06-01T00:00:00.000Z",
+    "expiryDate": "2027-06-01T00:00:00.000Z",
+    "paymentTerms": "Net 30"
+  }'
+```
+
+---
+
+### Subscriptions (`/api/v1/subscriptions`)
+- **Admin & Staff**: Full lifecycle management (`subscriptions:read`, `subscriptions:manage`).
+- **Customers**: Read-only for their own subscriptions.
+
+#### 5. Activate Subscription (`confirmed -> active`)
+> First invoice scheduled on `startDate`.
+```bash
+curl -X POST http://localhost:5000/api/v1/subscriptions/<SUBSCRIPTION_ID>/activate \
   -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>"
 ```
+
+#### 6. Pause Subscription (`active -> paused`)
+> Respects `plan.allowPause`; admin can supply `"force": true` to override.
+```bash
+curl -X POST http://localhost:5000/api/v1/subscriptions/<SUBSCRIPTION_ID>/pause \
+  -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reason": "Temporary business pause request",
+    "force": false
+  }'
+```
+
+#### 7. Resume Subscription (`paused -> active`)
+> Automatically adds paused days to `totalPausedDays` and adjusts `nextBillingDate = max(nextBillingDate, today)` to prevent invoice backlogs.
+```bash
+curl -X POST http://localhost:5000/api/v1/subscriptions/<SUBSCRIPTION_ID>/resume \
+  -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>"
+```
+
+#### 8. Renew Subscription
+> Extends `expiryDate` by `periods × billingCycle` and increments `renewalCount`.
+```bash
+curl -X POST http://localhost:5000/api/v1/subscriptions/<SUBSCRIPTION_ID>/renew \
+  -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "periods": 1
+  }'
+```
+
+#### 9. View Subscription Timeline History
+```bash
+curl -X GET http://localhost:5000/api/v1/subscriptions/<SUBSCRIPTION_ID>/history \
+  -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>"
+```
+
+---
+
+### Automated Background Jobs
+Trigger manually via Admin API:
+```bash
+curl -X POST http://localhost:5000/api/v1/admin/jobs/subscriptions/run \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
+Scheduled automatically via `node-cron` with `SUBSCRIPTION_CRON_SCHEDULE` (default: `30 0 * * *`).

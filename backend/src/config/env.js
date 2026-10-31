@@ -29,6 +29,8 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000),
   RATE_LIMIT_MAX: z.coerce.number().default(100),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().default(10),
+  DEFAULT_PAYMENT_TERMS_DAYS: z.coerce.number().default(15),
+  SUBSCRIPTION_CRON_SCHEDULE: z.string().default('30 0 * * *'),
   SWAGGER_ENABLED: z.preprocess((val) => {
     if (typeof val === 'string') {
       return val.toLowerCase() === 'true' || val === '1';
