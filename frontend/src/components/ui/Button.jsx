@@ -1,35 +1,65 @@
+import { Spinner } from './Spinner';
+
+/**
+ * Button primitive with variants, sizes, loading state with spinner, and trailing icons.
+ * Follows design requirements:
+ * - Primary button: solid black, white text, 10px radius
+ * - Secondary: white with subtle border
+ * - Ghost: transparent with hover fill
+ * - Danger: red tint with hover state
+ */
 export const Button = ({
   children,
-  variant = 'secondary', // 'primary', 'secondary', 'danger', 'ghost'
-  size = 'md', // 'sm', 'md', 'lg'
-  className = '',
-  disabled = false,
+  variant = 'primary', // 'primary' | 'secondary' | 'ghost' | 'danger'
+  size = 'md', // 'sm' | 'md' | 'lg'
   type = 'button',
+  loading = false,
+  disabled = false,
+  trailingIcon: TrailingIcon,
+  leadingIcon: LeadingIcon,
+  className = '',
   onClick,
   ...props
 }) => {
   const sizeClasses = {
-    sm: 'px-3 py-1.5 text-xs',
-    md: 'px-4 py-2 text-sm',
-    lg: 'px-6 py-3 text-base',
-  }[size] || 'px-4 py-2 text-sm';
+    sm: 'px-3 py-1.5 text-xs rounded-[8px]',
+    md: 'px-4 py-2.5 text-sm rounded-[10px]',
+    lg: 'px-5 py-3 text-base rounded-[12px]',
+  }[size] || 'px-4 py-2.5 text-sm rounded-[10px]';
 
   const variantClasses = {
-    primary: 'brutal-btn-primary',
-    secondary: 'brutal-btn',
-    danger: 'brutal-btn bg-red-100 text-red-950 dark:bg-red-950 dark:text-red-100 hover:bg-red-200 dark:hover:bg-red-900',
-    ghost: 'font-mono text-xs font-bold uppercase underline-offset-4 hover:underline text-ink cursor-pointer px-2 py-1',
-  }[variant] || 'brutal-btn';
+    primary:
+      'bg-black text-white hover:bg-neutral-800 active:bg-neutral-900 border border-transparent shadow-sm',
+    secondary:
+      'bg-white text-neutral-800 hover:bg-neutral-50 active:bg-neutral-100 border border-black/10 shadow-sm',
+    ghost:
+      'bg-transparent text-neutral-700 hover:bg-black/5 active:bg-black/10 border border-transparent',
+    danger:
+      'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 border border-transparent shadow-sm',
+  }[variant] || 'bg-black text-white';
+
+  const isDisabled = disabled || loading;
 
   return (
     <button
       type={type}
-      disabled={disabled}
+      disabled={isDisabled}
       onClick={onClick}
-      className={`inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed select-none ${variantClasses} ${sizeClasses} ${className}`}
+      className={`inline-flex items-center justify-center font-medium transition-all duration-150 select-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-black/20 ${variantClasses} ${sizeClasses} ${className}`}
       {...props}
     >
-      {children}
+      {loading ? (
+        <span className="flex items-center gap-2">
+          <Spinner size={size === 'sm' ? 'sm' : 'md'} />
+          <span>{children}</span>
+        </span>
+      ) : (
+        <span className="flex items-center gap-2">
+          {LeadingIcon && <LeadingIcon size={16} />}
+          <span>{children}</span>
+          {TrailingIcon && <TrailingIcon size={16} />}
+        </span>
+      )}
     </button>
   );
 };

@@ -1,125 +1,225 @@
-# FLUX Backend API
+# OrbitBill Backend — Phase 3: Quotations & Subscriptions
 
-A clean, modular RESTful backend built with **Node.js, Express.js, MongoDB, and Mongoose** adhering to the MVC (Model-View-Controller) design pattern.
+OrbitBill is a modular Subscription Management System backend built with Node.js, Express, MongoDB (Mongoose), and CommonJS.
 
 ---
 
-## Folder Structure
+## Target Structure
 
-```text
-backend/
-├── src/
-│   ├── config/
-│   │   └── db.js                 # MongoDB connection configuration
-│   ├── modules/
-│   │   └── users/
-│   │       ├── user.model.js     # Mongoose schema and model
-│   │       ├── user.controller.js# Request handling & business logic
-│   │       ├── user.routes.js    # API route definitions & Swagger annotations
-│   │       └── user.validation.js# Input validation middlewares
-│   ├── middlewares/
-│   │   └── error.middleware.js   # Centralized error handler
-│   ├── app.js                    # Express application setup & middleware assembly
-│   └── server.js                 # Server entrypoint and DB initialization
-├── .env                          # Local environment variables
-├── .env.example                  # Example template for environment variables
-├── .gitignore                    # Git ignore file
-├── package.json                  # Dependencies and npm scripts
-└── README.md                     # Project documentation
 ```
-
----
-
-## Features
-
-- **Modular MVC Architecture**: Separate folders for models, controllers, routes, validations, configs, and middlewares.
-- **Complete CRUD Operations**: Full CRUD suite for the Users resource.
-- **Request Validation**: Validation middleware ensuring data integrity and clean user feedback before reaching the database.
-- **Centralized Error Handling**: Unified JSON error responses for validation, cast errors, duplicate keys, and unexpected server failures.
-- **Interactive API Documentation**: Swagger UI documentation generated using `swagger-jsdoc` and `swagger-ui-express`.
-- **Environment Driven**: Configurations managed via `.env` with `dotenv`.
+backend/
+├── scripts/
+│   ├── seedAdmin.js                     # Idempotent admin seeder
+│   └── backfillCustomers.js             # Idempotent customer user-to-customer backfill
+├── src/
+│   ├── app.js                          # Express app configuration & middlewares
+│   ├── server.js                       # Server entrypoint & graceful shutdown
+│   ├── config/
+│   │   ├── env.js                      # Strict Zod environment variable validation
+│   │   ├── db.js                       # Mongoose MongoDB connection
+│   │   ├── logger.js                   # Pino logger with pino-pretty in dev
+│   │   ├── swagger.js                  # Swagger JSDoc & Bearer Auth definitions
+│   │   └── resend.js                   # Resend email client instance
+│   ├── constants/
+│   │   ├── roles.js                    # System roles (admin, staff, customer)
+│   │   └── permissions.js              # Granular RBAC permissions
+│   ├── emails/
+│   │   ├── email.service.js            # Resend integration with non-blocking error logging
+│   │   └── templates/                  # welcome, reset-password, staff-invite, quotation-sent
+│   ├── middlewares/
+│   │   ├── auth.middleware.js          # Bearer JWT verification & active user check
+│   │   ├── rbac.middleware.js          # authorizeRoles, requirePermission, ownResource helper
+│   │   ├── validate.middleware.js      # Zod validation middleware for body, params, query
+│   │   ├── error.middleware.js         # Centralized error handler with unified error shape
+│   │   ├── notFound.middleware.js      # 404 handler
+│   │   └── rateLimit.middleware.js     # Global and strict auth rate limiters
+│   ├── modules/
+│   │   ├── auth/                       # Auth module (register, login, refresh, logout, reset)
+│   │   ├── users/                      # Staff management (Admin-only)
+│   │   ├── products/                   # Products & embedded variants
+│   │   ├── plans/                      # Subscription plans (daily/weekly/monthly/yearly)
+│   │   ├── taxes/                      # Taxes & scoped products
+│   │   ├── discounts/                  # Fixed/percentage discounts & scoping
+│   │   ├── customers/                  # Customers, portal linking & self-service
+│   │   ├── quotations/                 # Quotations, templates & convert to subscription
+│   │   ├── subscriptions/              # Recurring subscriptions, state machine & cron jobs
+│   │   └── counters/
+│   │       └── counter.model.js        # Atomic sequence counter schema
+│   └── utils/
+│       ├── ApiError.js                 # Standardized operational error class
+│       ├── ApiResponse.js              # Standardized API response class
+│       ├── asyncHandler.js             # Async error wrapper
+│       ├── pagination.js               # Pagination query parser & metadata builder
+│       ├── search.js                   # Safe regex-escaped $or builder
+│       ├── tokens.js                   # JWT generation, verification & crypto helpers
+│       ├── numberGenerator.js          # Atomic sequence generator (e.g. SUB-2026-00001)
+│       ├── pricing.js                  # Pure money math, getUnitPrice, calcLine
+│       ├── discountEligibility.js       # Pure eligibility check & capped calcDiscountAmount
+│       ├── dates.js                    # Billing cycle math, month-end clamping & leap year logic
+│       └── lineBuilder.js              # Server-side pricing, tax & preview discount calculation
+├── .env.example
+├── package.json
+└── README.md
+```
 
 ---
 
 ## Getting Started
 
-### Prerequisites
+### 1. Prerequisites
+- Node.js (v18+)
+- MongoDB (local instance or MongoDB Atlas cluster)
 
-- [Node.js](https://nodejs.org/) (v16 or higher recommended)
-- [MongoDB](https://www.mongodb.com/) running locally or a MongoDB Atlas connection string
-
-### 1. Installation
-
-Install all required dependencies:
-
-```bash
-npm install
-```
-
-### 2. Environment Configuration
-
-Copy the example environment file and configure your credentials:
-
+### 2. Setup Environment Variables
+Copy `.env.example` to `.env`:
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` if necessary:
-
-```env
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/flux_db
-NODE_ENV=development
+### 3. Install Dependencies
+```bash
+npm install
 ```
 
-### 3. Running the Server
+### 4. Database Seed & Backfill Scripts
+- **Seed Super Admin** (idempotent):
+  ```bash
+  npm run seed:admin
+  ```
+- **Backfill Existing Customers** (idempotent):
+  ```bash
+  npm run backfill:customers
+  ```
 
-#### Development Mode (with auto-restart via Nodemon)
+### 5. Run the Server
 ```bash
+# Development (with nodemon auto-restart)
 npm run dev
-```
 
-#### Production Mode
-```bash
+# Production
 npm start
 ```
 
 ---
 
-## API Documentation
-
-When the server is running, access the interactive Swagger UI API documentation at:
-
-- **Swagger UI**: [http://localhost:5000/api-docs](http://localhost:5000/api-docs)
-
-### API Endpoints Summary
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/` | API health check |
-| `POST` | `/api/users` | Create a new user |
-| `GET` | `/api/users` | Retrieve all users |
-| `GET` | `/api/users/:id` | Retrieve a user by ID |
-| `PUT` | `/api/users/:id` | Update an existing user by ID |
-| `DELETE` | `/api/users/:id` | Delete a user by ID |
+## Interactive API Documentation
+Swagger UI is live at:
+```
+http://localhost:5000/api-docs
+```
+Use the **Authorize** button with the Bearer JWT token obtained from `/api/v1/auth/login`.
 
 ---
 
-## Example Request Payloads
+## Phase 3 Endpoints & Sample `curl` Requests
 
-### Create User (`POST /api/users`)
-```json
-{
-  "name": "Jane Doe",
-  "email": "jane.doe@example.com",
-  "age": 28
-}
+### Quotations & Templates (`/api/v1/quotations`)
+- **Admin & Staff**: Full management (`quotations:read`, `quotations:write`).
+- **Customers**: Read-only for their own quotations in `sent` or `confirmed` status.
+
+#### 1. Create a Quotation Template
+```bash
+curl -X POST http://localhost:5000/api/v1/quotations/templates \
+  -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "templateName": "Enterprise SaaS Template",
+    "validityDays": 45,
+    "lines": [
+      {
+        "productId": "<PRODUCT_ID>",
+        "planId": "<PLAN_ID>",
+        "quantity": 2,
+        "taxId": "<TAX_ID>"
+      }
+    ]
+  }'
 ```
 
-### Update User (`PUT /api/users/:id`)
-```json
-{
-  "name": "Jane Smith",
-  "age": 29
-}
+#### 2. Create Quotation from Template (With Live Catalog Re-Pricing)
+```bash
+curl -X POST http://localhost:5000/api/v1/quotations/from-template/<TEMPLATE_ID> \
+  -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customerId": "<CUSTOMER_ID>",
+    "validityDays": 30
+  }'
 ```
+
+#### 3. Send Quotation to Customer (Triggers Email via Resend)
+```bash
+curl -X POST http://localhost:5000/api/v1/quotations/<QUOTATION_ID>/send \
+  -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>"
+```
+
+#### 4. Convert Quotation into a Subscription (Atomic MongoDB Transaction)
+```bash
+curl -X POST http://localhost:5000/api/v1/quotations/<QUOTATION_ID>/convert \
+  -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "startDate": "2026-06-01T00:00:00.000Z",
+    "expiryDate": "2027-06-01T00:00:00.000Z",
+    "paymentTerms": "Net 30"
+  }'
+```
+
+---
+
+### Subscriptions (`/api/v1/subscriptions`)
+- **Admin & Staff**: Full lifecycle management (`subscriptions:read`, `subscriptions:manage`).
+- **Customers**: Read-only for their own subscriptions.
+
+#### 5. Activate Subscription (`confirmed -> active`)
+> First invoice scheduled on `startDate`.
+```bash
+curl -X POST http://localhost:5000/api/v1/subscriptions/<SUBSCRIPTION_ID>/activate \
+  -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>"
+```
+
+#### 6. Pause Subscription (`active -> paused`)
+> Respects `plan.allowPause`; admin can supply `"force": true` to override.
+```bash
+curl -X POST http://localhost:5000/api/v1/subscriptions/<SUBSCRIPTION_ID>/pause \
+  -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "reason": "Temporary business pause request",
+    "force": false
+  }'
+```
+
+#### 7. Resume Subscription (`paused -> active`)
+> Automatically adds paused days to `totalPausedDays` and adjusts `nextBillingDate = max(nextBillingDate, today)` to prevent invoice backlogs.
+```bash
+curl -X POST http://localhost:5000/api/v1/subscriptions/<SUBSCRIPTION_ID>/resume \
+  -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>"
+```
+
+#### 8. Renew Subscription
+> Extends `expiryDate` by `periods × billingCycle` and increments `renewalCount`.
+```bash
+curl -X POST http://localhost:5000/api/v1/subscriptions/<SUBSCRIPTION_ID>/renew \
+  -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "periods": 1
+  }'
+```
+
+#### 9. View Subscription Timeline History
+```bash
+curl -X GET http://localhost:5000/api/v1/subscriptions/<SUBSCRIPTION_ID>/history \
+  -H "Authorization: Bearer <STAFF_OR_ADMIN_TOKEN>"
+```
+
+---
+
+### Automated Background Jobs
+Trigger manually via Admin API:
+```bash
+curl -X POST http://localhost:5000/api/v1/admin/jobs/subscriptions/run \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
+Scheduled automatically via `node-cron` with `SUBSCRIPTION_CRON_SCHEDULE` (default: `30 0 * * *`).

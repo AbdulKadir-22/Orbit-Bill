@@ -1,62 +1,156 @@
-const express = require('express');
+const helmet = require('helmet');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const mongoSanitize = require('express-mongo-sanitize');
+const morgan = require('morgan');
+const compression = require('compression');
+const express = require('express');
 const swaggerUi = require('swagger-ui-express');
-const swaggerJsdoc = require('swagger-jsdoc');
-const userRoutes = require('./modules/users/user.routes');
+
+const env = require('./config/env');
+const logger = require('./config/logger');
+const swaggerSpec = require('./config/swagger');
+
+const responseTimeMiddleware = require('./middlewares/responseTime.middleware');
+const authRoutes = require('./modules/auth/auth.routes');
+const staffRoutes = require('./modules/users/user.routes');
+const productRoutes = require('./modules/products/product.routes');
+const planRoutes = require('./modules/plans/plan.routes');
+const taxRoutes = require('./modules/taxes/tax.routes');
+const discountRoutes = require('./modules/discounts/discount.routes');
+const customerRoutes = require('./modules/customers/customer.routes');
+const quotationRoutes = require('./modules/quotations/quotation.routes');
+const subscriptionRoutes = require('./modules/subscriptions/subscription.routes');
+const invoiceRoutes = require('./modules/invoices/invoice.routes');
+const paymentRoutes = require('./modules/payments/payment.routes');
+const dashboardRoutes = require('./modules/dashboard/dashboard.routes');
+const reportRoutes = require('./modules/reports/report.routes');
+const portalRoutes = require('./modules/portal/portal.routes');
+
+const { runSubscriptionJobs } = require('./modules/subscriptions/subscription.jobs');
+const { runBillingCycle } = require('./modules/invoices/billing.engine');
+const { globalRateLimiter } = require('./middlewares/rateLimit.middleware');
+const { authenticate } = require('./middlewares/auth.middleware');
+const { authorizeRoles } = require('./middlewares/rbac.middleware');
+const ROLES = require('./constants/roles');
+const notFoundHandler = require('./middlewares/notFound.middleware');
 const errorHandler = require('./middlewares/error.middleware');
+const ApiResponse = require('./utils/ApiResponse');
 
 const app = express();
 
-// Swagger configuration
-const swaggerOptions = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'FLUX User Management API',
-      version: '1.0.0',
-      description: 'RESTful API for User Management built with Node.js, Express, MongoDB, and Mongoose (MVC Architecture)',
-    },
-    servers: [
-      {
-        url: `http://localhost:${process.env.PORT || 5000}`,
-        description: 'Development Server',
-      },
-    ],
-  },
-  apis: ['./src/modules/**/*.routes.js'],
+// Track response time header and log slow requests
+app.use(responseTimeMiddleware);
+
+// Gzip compression
+app.use(compression());
+
+// Security HTTP headers
+app.use(helmet());
+
+// CORS configuration with origin and credentials
+app.use(
+  cors({
+    origin: env.CLIENT_URL,
+    credentials: true,
+  })
+);
+
+// Express JSON body parser with size limit & URL encoded parser
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Cookie parser for refresh token cookies
+app.use(cookieParser());
+
+// Sanitize inputs against MongoDB Operator Injection
+app.use(
+  mongoSanitize({
+    allowDots: true,
+    replaceWith: '_',
+  })
+);
+
+// Morgan HTTP request logging piped through pino logger
+const morganStream = {
+  write: (message) => logger.info(message.trim()),
 };
+app.use(
+  morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev', {
+    stream: morganStream,
+  })
+);
 
-const swaggerDocs = swaggerJsdoc(swaggerOptions);
+// Global API Rate Limiter
+app.use('/api', globalRateLimiter);
 
-// Standard Middlewares
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Documentation Route
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
-
-// Health check / root route
-app.get('/', (req, res) => {
+// Health check endpoint
+app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'FLUX API is running',
-    documentation: '/api-docs',
+    message: 'OrbitBill API is operational',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
   });
 });
 
-// API Routes
-app.use('/api/users', userRoutes);
+// Swagger documentation
+if (env.SWAGGER_ENABLED) {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+}
 
-// 404 handler for undefined routes
-app.use((req, res, next) => {
-  res.status(404).json({
-    success: false,
-    message: `Resource not found on ${req.originalUrl}`,
-  });
-});
+// Mount API v1 router
+const apiV1Router = express.Router();
+apiV1Router.use('/auth', authRoutes);
+apiV1Router.use('/staff', staffRoutes);
+apiV1Router.use('/products', productRoutes);
+apiV1Router.use('/plans', planRoutes);
+apiV1Router.use('/taxes', taxRoutes);
+apiV1Router.use('/discounts', discountRoutes);
+apiV1Router.use('/customers', customerRoutes);
+apiV1Router.use('/quotations', quotationRoutes);
+apiV1Router.use('/subscriptions', subscriptionRoutes);
+apiV1Router.use('/invoices', invoiceRoutes);
+apiV1Router.use('/payments', paymentRoutes);
+apiV1Router.use('/dashboard', dashboardRoutes);
+apiV1Router.use('/reports', reportRoutes);
+apiV1Router.use('/portal', portalRoutes);
 
-// Centralized Error Handling Middleware
+// Admin manual background job triggers
+apiV1Router.post(
+  '/admin/jobs/subscriptions/run',
+  authenticate,
+  authorizeRoles(ROLES.ADMIN),
+  async (req, res, next) => {
+    try {
+      const result = await runSubscriptionJobs({ triggeredBy: req.user._id });
+      return ApiResponse.success(res, 'Subscription and quotation background jobs executed successfully', result);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+apiV1Router.post(
+  '/admin/jobs/billing/run',
+  authenticate,
+  authorizeRoles(ROLES.ADMIN),
+  async (req, res, next) => {
+    try {
+      const result = await runBillingCycle({ asOfDate: req.body?.asOfDate ? new Date(req.body.asOfDate) : new Date() });
+      return ApiResponse.success(res, 'Billing engine run completed successfully', result);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+app.use('/api/v1', apiV1Router);
+
+// 404 Handler for undefined routes
+app.use(notFoundHandler);
+
+// Centralized error handler
 app.use(errorHandler);
 
 module.exports = app;

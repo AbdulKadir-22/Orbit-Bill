@@ -1,6 +1,11 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
+import { STRINGS } from '../../constants/strings';
 
+/**
+ * Modal primitive
+ * Supports escape key closing, backdrop click, focus locking body scroll.
+ */
 export const Modal = ({
   isOpen,
   onClose,
@@ -11,7 +16,7 @@ export const Modal = ({
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && isOpen) {
-        onClose();
+        onClose?.();
       }
     };
     if (isOpen) {
@@ -27,7 +32,7 @@ export const Modal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/70 backdrop-blur-[2px] animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
       <div
         className="fixed inset-0"
         onClick={onClose}
@@ -36,21 +41,24 @@ export const Modal = ({
       <div
         role="dialog"
         aria-modal="true"
-        className={`brutal-card w-full ${maxWidth} bg-surface-card p-6 z-10 relative flex flex-col gap-4 animate-in zoom-in-95 duration-150`}
+        aria-labelledby={title ? 'modal-title' : undefined}
+        className={`w-full ${maxWidth} bg-white rounded-[16px] border border-black/10 shadow-2xl p-6 z-10 relative flex flex-col gap-4 animate-in zoom-in-95 duration-150`}
       >
-        <div className="flex items-center justify-between border-b-2 border-border pb-3">
-          <h3 className="font-heading font-bold text-lg text-ink tracking-tight">
-            {title}
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 border border-border bg-surface hover:bg-ink hover:text-surface transition-colors cursor-pointer"
-            aria-label="Close dialog"
-          >
-            <X size={16} />
-          </button>
-        </div>
+        {title && (
+          <div className="flex items-center justify-between pb-3 border-b border-black/5">
+            <h3 id="modal-title" className="font-semibold text-lg text-neutral-900 tracking-tight">
+              {title}
+            </h3>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1 rounded-[8px] text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition-colors cursor-pointer"
+              aria-label={STRINGS.UI.CLOSE}
+            >
+              <X size={18} />
+            </button>
+          </div>
+        )}
         <div>{children}</div>
       </div>
     </div>
