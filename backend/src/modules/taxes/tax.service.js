@@ -1,16 +1,18 @@
 const Tax = require('./tax.model');
 const Quotation = require('../quotations/quotation.model');
 const Subscription = require('../subscriptions/subscription.model');
+const Invoice = require('../invoices/invoice.model');
 const ApiError = require('../../utils/ApiError');
 const { parsePagination, buildPaginationMeta } = require('../../utils/pagination');
 const { buildSearchQuery } = require('../../utils/search');
 
 const isReferenced = async (taxId) => {
-  const [quoteCount, subCount] = await Promise.all([
+  const [quoteCount, subCount, invCount] = await Promise.all([
     Quotation.countDocuments({ 'lines.taxId': taxId }),
     Subscription.countDocuments({ 'lines.taxId': taxId }),
+    Invoice.countDocuments({ 'lines.taxId': taxId }),
   ]);
-  return (quoteCount + subCount) > 0;
+  return (quoteCount + subCount + invCount) > 0;
 };
 
 const createTax = async (data, userId) => {

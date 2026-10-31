@@ -2,20 +2,26 @@ const Customer = require('./customer.model');
 const User = require('../users/user.model');
 const Quotation = require('../quotations/quotation.model');
 const Subscription = require('../subscriptions/subscription.model');
+const Invoice = require('../invoices/invoice.model');
+const Payment = require('../payments/payment.model');
 const ApiError = require('../../utils/ApiError');
 const ROLES = require('../../constants/roles');
 const { parsePagination, buildPaginationMeta } = require('../../utils/pagination');
 const { buildSearchQuery } = require('../../utils/search');
 const { generateCryptoToken, hashToken } = require('../../utils/tokens');
 const { sendPasswordResetEmail } = require('../../emails/email.service');
+const { roundMoney } = require('../../utils/pricing');
+const { startOfDay } = require('../../utils/dates');
 const env = require('../../config/env');
 
 const isReferenced = async (customerId) => {
-  const [quoteCount, subCount] = await Promise.all([
+  const [quoteCount, subCount, invCount, payCount] = await Promise.all([
     Quotation.countDocuments({ customerId }),
     Subscription.countDocuments({ customerId }),
+    Invoice.countDocuments({ customerId }),
+    Payment.countDocuments({ customerId }),
   ]);
-  return (quoteCount + subCount) > 0;
+  return (quoteCount + subCount + invCount + payCount) > 0;
 };
 
 const createCustomer = async (data, creatorId = null) => {
@@ -187,7 +193,7 @@ const createPortalAccount = async (customerId, creatorId) => {
 };
 
 /**
- * Summary for customer: retrieves subscriptions, quotations, and counts (invoices remains placeholder for Phase 4).
+ * Summary for customer: retrieves subscriptions, quotations, invoices, and financial totals.
  */
 const getCustomerSummary = async (customerId) => {
   const customer = await Customer.findById(customerId);
@@ -195,12 +201,44 @@ const getCustomerSummary = async (customerId) => {
     throw ApiError.notFound('Customer not found');
   }
 
-  const [subscriptions, totalSubscriptions, quotations, totalQuotations] = await Promise.all([
+  const today = startOfDay(new Date());
+
+  const [
+    subscriptions,
+    totalSubscriptions,
+    quotations,
+    totalQuotations,
+    invoices,
+    totalInvoices,
+    invoiceTotals,
+    overdueInvoicesCount,
+  ] = await Promise.all([
     Subscription.find({ customerId: customer._id }).sort({ createdAt: -1 }).limit(5),
     Subscription.countDocuments({ customerId: customer._id }),
     Quotation.find({ customerId: customer._id, isTemplate: false }).sort({ createdAt: -1 }).limit(5),
     Quotation.countDocuments({ customerId: customer._id, isTemplate: false }),
+    Invoice.find({ customerId: customer._id, status: { $ne: 'cancelled' } }).sort({ invoiceDate: -1 }).limit(5),
+    Invoice.countDocuments({ customerId: customer._id, status: { $ne: 'cancelled' } }),
+    Invoice.aggregate([
+      { $match: { customerId: customer._id, status: { $ne: 'cancelled' } } },
+      {
+        $group: {
+          _id: null,
+          totalInvoiced: { $sum: '$grandTotal' },
+          totalPaid: { $sum: '$amountPaid' },
+          totalOutstanding: { $sum: '$amountDue' },
+        },
+      },
+    ]),
+    Invoice.countDocuments({
+      customerId: customer._id,
+      status: 'confirmed',
+      amountDue: { $gt: 0 },
+      dueDate: { $lt: today },
+    }),
   ]);
+
+  const totals = invoiceTotals[0] || { totalInvoiced: 0, totalPaid: 0, totalOutstanding: 0 };
 
   return {
     customerId: customer._id,
@@ -209,11 +247,15 @@ const getCustomerSummary = async (customerId) => {
     stats: {
       totalSubscriptions,
       totalQuotations,
-      totalInvoices: 0,
+      totalInvoices,
+      overdueInvoicesCount,
+      totalInvoiced: roundMoney(totals.totalInvoiced),
+      totalPaid: roundMoney(totals.totalPaid),
+      totalOutstanding: roundMoney(totals.totalOutstanding),
     },
     latestSubscriptions: subscriptions,
     latestQuotations: quotations,
-    invoices: [], // TODO: Populated in Phase 4
+    latestInvoices: invoices,
   };
 };
 

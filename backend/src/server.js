@@ -11,7 +11,9 @@ const startServer = async () => {
 
   // Initialize automated background cron jobs
   const { initSubscriptionCron } = require('./modules/subscriptions/subscription.jobs');
+  const { initBillingCron } = require('./modules/invoices/billing.jobs');
   initSubscriptionCron();
+  initBillingCron();
 
   // Start HTTP server
   server = app.listen(env.PORT, () => {

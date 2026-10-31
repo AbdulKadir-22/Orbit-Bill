@@ -3,6 +3,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const mongoSanitize = require('express-mongo-sanitize');
 const morgan = require('morgan');
+const compression = require('compression');
 const express = require('express');
 const swaggerUi = require('swagger-ui-express');
 
@@ -10,6 +11,7 @@ const env = require('./config/env');
 const logger = require('./config/logger');
 const swaggerSpec = require('./config/swagger');
 
+const responseTimeMiddleware = require('./middlewares/responseTime.middleware');
 const authRoutes = require('./modules/auth/auth.routes');
 const staffRoutes = require('./modules/users/user.routes');
 const productRoutes = require('./modules/products/product.routes');
@@ -19,8 +21,14 @@ const discountRoutes = require('./modules/discounts/discount.routes');
 const customerRoutes = require('./modules/customers/customer.routes');
 const quotationRoutes = require('./modules/quotations/quotation.routes');
 const subscriptionRoutes = require('./modules/subscriptions/subscription.routes');
+const invoiceRoutes = require('./modules/invoices/invoice.routes');
+const paymentRoutes = require('./modules/payments/payment.routes');
+const dashboardRoutes = require('./modules/dashboard/dashboard.routes');
+const reportRoutes = require('./modules/reports/report.routes');
+const portalRoutes = require('./modules/portal/portal.routes');
 
 const { runSubscriptionJobs } = require('./modules/subscriptions/subscription.jobs');
+const { runBillingCycle } = require('./modules/invoices/billing.engine');
 const { globalRateLimiter } = require('./middlewares/rateLimit.middleware');
 const { authenticate } = require('./middlewares/auth.middleware');
 const { authorizeRoles } = require('./middlewares/rbac.middleware');
@@ -30,6 +38,12 @@ const errorHandler = require('./middlewares/error.middleware');
 const ApiResponse = require('./utils/ApiResponse');
 
 const app = express();
+
+// Track response time header and log slow requests
+app.use(responseTimeMiddleware);
+
+// Gzip compression
+app.use(compression());
 
 // Security HTTP headers
 app.use(helmet());
@@ -96,8 +110,13 @@ apiV1Router.use('/discounts', discountRoutes);
 apiV1Router.use('/customers', customerRoutes);
 apiV1Router.use('/quotations', quotationRoutes);
 apiV1Router.use('/subscriptions', subscriptionRoutes);
+apiV1Router.use('/invoices', invoiceRoutes);
+apiV1Router.use('/payments', paymentRoutes);
+apiV1Router.use('/dashboard', dashboardRoutes);
+apiV1Router.use('/reports', reportRoutes);
+apiV1Router.use('/portal', portalRoutes);
 
-// Admin manual background job trigger
+// Admin manual background job triggers
 apiV1Router.post(
   '/admin/jobs/subscriptions/run',
   authenticate,
@@ -106,6 +125,20 @@ apiV1Router.post(
     try {
       const result = await runSubscriptionJobs({ triggeredBy: req.user._id });
       return ApiResponse.success(res, 'Subscription and quotation background jobs executed successfully', result);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+apiV1Router.post(
+  '/admin/jobs/billing/run',
+  authenticate,
+  authorizeRoles(ROLES.ADMIN),
+  async (req, res, next) => {
+    try {
+      const result = await runBillingCycle({ asOfDate: req.body?.asOfDate ? new Date(req.body.asOfDate) : new Date() });
+      return ApiResponse.success(res, 'Billing engine run completed successfully', result);
     } catch (err) {
       next(err);
     }

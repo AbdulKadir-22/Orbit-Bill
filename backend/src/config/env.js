@@ -31,6 +31,30 @@ const envSchema = z.object({
   AUTH_RATE_LIMIT_MAX: z.coerce.number().default(10),
   DEFAULT_PAYMENT_TERMS_DAYS: z.coerce.number().default(15),
   SUBSCRIPTION_CRON_SCHEDULE: z.string().default('30 0 * * *'),
+  
+  // Phase 4 additions
+  BILLING_CRON_SCHEDULE: z.string().default('0 1 * * *'),
+  BILLING_AUTO_CONFIRM: z.preprocess((val) => {
+    if (typeof val === 'string') {
+      return val.toLowerCase() === 'true' || val === '1';
+    }
+    return val === undefined ? true : Boolean(val);
+  }, z.boolean().default(true)),
+  BILLING_BATCH_SIZE: z.coerce.number().default(100),
+  BILLING_MAX_CATCHUP_PERIODS: z.coerce.number().default(3),
+  DASHBOARD_CACHE_TTL_SEC: z.coerce.number().default(60),
+  OVERDUE_REMINDER_ENABLED: z.preprocess((val) => {
+    if (typeof val === 'string') {
+      return val.toLowerCase() === 'true' || val === '1';
+    }
+    return Boolean(val);
+  }, z.boolean().default(false)),
+  DEFAULT_CURRENCY: z.string().default('INR'),
+  COMPANY_NAME: z.string().default('OrbitBill Inc.'),
+  COMPANY_ADDRESS: z.string().default('123 Enterprise Way, Tech City, KA, 560001, India'),
+  COMPANY_GSTIN: z.string().default('29AAAAA0000A1Z5'),
+  COMPANY_EMAIL: z.string().default('billing@orbitbill.com'),
+
   SWAGGER_ENABLED: z.preprocess((val) => {
     if (typeof val === 'string') {
       return val.toLowerCase() === 'true' || val === '1';

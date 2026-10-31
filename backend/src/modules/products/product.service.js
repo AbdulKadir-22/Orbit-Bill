@@ -1,23 +1,25 @@
 const Product = require('./product.model');
 const Quotation = require('../quotations/quotation.model');
 const Subscription = require('../subscriptions/subscription.model');
+const Invoice = require('../invoices/invoice.model');
 const ApiError = require('../../utils/ApiError');
 const { parsePagination, buildPaginationMeta } = require('../../utils/pagination');
 const { buildSearchQuery } = require('../../utils/search');
 const logger = require('../../config/logger');
 
 /**
- * Checks if a product is referenced in quotations or subscriptions.
+ * Checks if a product is referenced in quotations, subscriptions, or invoices.
  *
  * @param {string} productId
  * @returns {Promise<boolean>}
  */
 const isReferenced = async (productId) => {
-  const [quoteCount, subCount] = await Promise.all([
+  const [quoteCount, subCount, invCount] = await Promise.all([
     Quotation.countDocuments({ 'lines.productId': productId }),
     Subscription.countDocuments({ 'lines.productId': productId }),
+    Invoice.countDocuments({ 'lines.productId': productId }),
   ]);
-  return (quoteCount + subCount) > 0;
+  return (quoteCount + subCount + invCount) > 0;
 };
 
 const createProduct = async (data, userId) => {

@@ -120,9 +120,7 @@ const subscriptionSchema = new mongoose.Schema(
     quotationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Quotation',
-      unique: true,
-      sparse: true,
-      default: null,
+      default: undefined,
     },
     lines: [subscriptionLineSchema],
     billingCycle: {
@@ -219,6 +217,7 @@ const subscriptionSchema = new mongoose.Schema(
 );
 
 // Indexes
+subscriptionSchema.index({ quotationId: 1 }, { unique: true, sparse: true });
 subscriptionSchema.index({ customerId: 1, status: 1 });
 subscriptionSchema.index({ status: 1, nextBillingDate: 1 });
 
