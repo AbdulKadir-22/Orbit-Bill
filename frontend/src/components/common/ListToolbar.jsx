@@ -70,18 +70,22 @@ export const ListToolbar = ({
 
         {/* Filter Selects & Reset */}
         <div className="flex items-center flex-wrap sm:flex-nowrap gap-2.5">
-          {filters.map((f) => (
-            <div key={f.id} className="min-w-[130px] sm:w-auto">
-              <Select
-                id={`filter-${f.id}`}
-                value={f.value}
-                onChange={(e) => f.onChange(e.target.value)}
-                options={f.options}
-                placeholder={f.placeholder}
-                className="py-2 text-xs shadow-sm bg-white"
-              />
-            </div>
-          ))}
+          {Array.isArray(filters) ? (
+            filters.map((f) => (
+              <div key={f.id} className="min-w-[130px] sm:w-auto">
+                <Select
+                  id={`filter-${f.id}`}
+                  value={f.value}
+                  onChange={(e) => f.onChange(e.target.value)}
+                  options={f.options}
+                  placeholder={f.placeholder}
+                  className="py-2 text-xs shadow-sm bg-white"
+                />
+              </div>
+            ))
+          ) : (
+            filters
+          )}
 
           {onReset && (
             <Button

@@ -15,6 +15,10 @@ import { DiscountsPage } from '../features/discounts/DiscountsPage';
 import { CustomersPage } from '../features/customers/CustomersPage';
 import { CustomerDetailsPage } from '../features/customers/CustomerDetailsPage';
 import { StaffPage } from '../features/staff/StaffPage';
+import { QuotationsPage } from '../features/quotations/QuotationsPage';
+import { QuotationFormPage } from '../features/quotations/QuotationFormPage';
+import { SubscriptionsPage } from '../features/subscriptions/SubscriptionsPage';
+import { SubscriptionDetailsPage } from '../features/subscriptions/SubscriptionDetailsPage';
 
 /**
  * Root Router matching all required role guards & routes:
@@ -115,7 +119,23 @@ export const AppRoutes = () => {
           path="/quotations"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title={STRINGS.NAV.QUOTATIONS} />
+              <QuotationsPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/quotations/new"
+          element={
+            <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
+              <QuotationFormPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/quotations/:id"
+          element={
+            <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
+              <QuotationFormPage />
             </RoleRoute>
           }
         />
@@ -123,7 +143,7 @@ export const AppRoutes = () => {
           path="/subscriptions"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title={STRINGS.NAV.SUBSCRIPTIONS} />
+              <SubscriptionsPage />
             </RoleRoute>
           }
         />
@@ -131,7 +151,7 @@ export const AppRoutes = () => {
           path="/subscriptions/:id"
           element={
             <RoleRoute allowedRoles={[ROLES.ADMIN, ROLES.STAFF]}>
-              <PlaceholderPage title="Subscription Details" />
+              <SubscriptionDetailsPage />
             </RoleRoute>
           }
         />

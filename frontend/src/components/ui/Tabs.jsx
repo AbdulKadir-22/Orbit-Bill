@@ -18,8 +18,9 @@ export const Tabs = ({
           : 'border-b border-black/10'
       } ${className}`}
     >
-      {tabs.map((tab) => {
-        const isActive = activeTab === tab.id;
+      {tabs.map((tab, idx) => {
+        const tabId = tab.id ?? tab.key ?? idx;
+        const isActive = activeTab === tabId;
         const buttonClasses =
           variant === 'pill'
             ? `px-3 py-1.5 text-xs font-semibold rounded-[8px] transition-all cursor-pointer ${
@@ -35,13 +36,16 @@ export const Tabs = ({
 
         return (
           <button
-            key={tab.id}
+            key={tabId}
             role="tab"
             aria-selected={isActive}
-            onClick={() => onChange(tab.id)}
+            onClick={() => onChange(tabId)}
             className={buttonClasses}
           >
             {tab.label}
+            {tab.count !== undefined && (
+              <span className="ml-1 text-xs opacity-70">({tab.count})</span>
+            )}
           </button>
         );
       })}
